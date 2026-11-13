@@ -29,7 +29,7 @@ export const CONFIG = {
   customDomain: process.env.CUSTOM_DOMAIN || "", // 예: jiwongeum.kr (구매 후 설정)
   contactUrl: process.env.CONTACT_URL || "https://github.com/jeoninjae91-sys/subsidy-radar/issues/new",
   googleVerification: process.env.GOOGLE_SITE_VERIFICATION || "", // 구글 서치콘솔 HTML 태그의 content 값
-  naverVerification: process.env.NAVER_SITE_VERIFICATION || "", // 네이버 서치어드바이저 HTML 태그의 content 값
+  naverVerification: process.env.NAVER_SITE_VERIFICATION || "92cb4e07dfad468fb995872ba38d5d9d3b92e016", // 네이버 서치어드바이저 HTML 태그의 content 값
 };
 
 // 분야 분류 (사이트 카테고리 = URL 슬러그)

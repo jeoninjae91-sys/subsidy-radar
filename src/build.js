@@ -142,6 +142,10 @@ export function buildSite() {
   const byCat = {};
   for (const i of items) (byCat[i.category] ||= []).push(i);
 
+  // static/ 폴더(검색엔진 소유권 확인 파일 등)를 그대로 복사
+  const staticDir = path.join(path.dirname(PATHS.site), "static");
+  if (fs.existsSync(staticDir)) fs.cpSync(staticDir, PATHS.site, { recursive: true });
+
   write("index.html", indexPage(items, byCat, sample));
   for (const [slug, list] of Object.entries(byCat)) write(`c/${slug}.html`, categoryPage(slug, list, sample));
   for (const i of items) write(`s/${i.slug}.html`, servicePage(i));

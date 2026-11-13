@@ -1,7 +1,9 @@
 // 3단계: 발행 — 검색 유입용 정적 사이트 생성 (site/ 폴더를 그대로 Netlify·Cloudflare Pages·GitHub Pages에 올리면 됨)
 import fs from "node:fs";
 import path from "node:path";
-import { CATEGORIES, CONFIG, PATHS, isMain, todayKST } from "./config.js";
+import { CATEGORIES, CONFIG, PATHS, isMain, readJson, todayKST } from "./config.js";
+
+let GUIDES = {}; // 분야별 가이드 (buildSite에서 로드)
 import { closingSoon, ddayLabel, esc, loadItems, recent } from "./items.js";
 
 const CSS = `
@@ -108,6 +110,7 @@ function categoryPage(slug, list, sample) {
   const open = sorted.filter((i) => !(i.dday !== null && i.dday < 0));
   const body = `<div class="crumb"><a href="../index.html">홈</a></div>
 <h1>${esc(name)} 지원금 모음</h1><p class="lead">신청 가능한 ${esc(name)} 분야 지원사업 ${open.length}건 · 마감 가까운 순</p>
+${GUIDES[slug] ? `<p><a href="../g/${slug}.html">📘 ${esc(GUIDES[slug].title)}</a></p>` : ""}
 <ul class="list">${open.map((i) => itemRow(i, "../")).join("")}</ul>`;
   return layout({ title: `${name} 지원금 총정리 | ${CONFIG.siteName}`, description: `${name} 분야 정부·지자체 지원금 ${open.length}건을 마감일 순으로 정리했습니다.`, canonical: `${CONFIG.siteUrl}/c/${slug}.html`, body, sample });
 }
@@ -124,9 +127,28 @@ ${soon.length ? `<ul class="list">${soon.map((i) => itemRow(i)).join("")}</ul>` 
 <h2>🆕 새로 올라온 지원금</h2>
 ${fresh.length ? `<ul class="list">${fresh.map((i) => itemRow(i)).join("")}</ul>` : '<p class="lead">최근 2주간 새 사업이 없습니다.</p>'}
 <h2>🔥 많이 찾는 지원금</h2><ul class="list">${popular.map((i) => itemRow(i)).join("")}</ul>
+${Object.keys(GUIDES).length ? `<h2>📘 분야별 지원금 가이드</h2><ul class="list">${Object.entries(GUIDES).map(([s, g]) => `<li class="item"><div class="body"><a class="title" href="g/${s}.html">${esc(g.title)}</a><div class="sum">${esc(g.description)}</div></div></li>`).join("")}</ul>` : ""}
 <h2>분야별로 보기</h2>
 <ul class="cats">${Object.entries(CATEGORIES).filter(([s]) => byCat[s]?.length).map(([s, n]) => `<li><a href="c/${s}.html">${esc(n)}<br><small>${byCat[s].length}건</small></a></li>`).join("")}</ul>`;
   return layout({ title: `${CONFIG.siteName} - 마감 임박 정부지원금·혜택 한눈에`, description: "청년·출산·소상공인·노인 등 정부와 지자체 지원금을 매일 모아 쉬운 말로 정리하고 마감일을 알려드립니다.", canonical: `${CONFIG.siteUrl}/`, body, sample, base: "" });
+}
+
+// 분야별 가이드 글 (/g/<분야>.html)
+const paras = (t) => String(t || "").split(/\n\s*\n/).map((p) => `<p>${esc(p.trim())}</p>`).join("");
+
+function guidePage(slug, g, itemById) {
+  const sections = g.sections.map((s) => {
+    const rel = (s.related_ids || []).map((id) => itemById[id]).filter(Boolean);
+    return `<h2>${esc(s.heading)}</h2>${paras(s.body)}${rel.length ? `<ul class="list">${rel.map((i) => itemRow(i, "../")).join("")}</ul>` : ""}`;
+  }).join("");
+  const body = `<div class="crumb"><a href="../index.html">홈</a> › <a href="../c/${slug}.html">${esc(CATEGORIES[slug])}</a></div>
+<h1>${esc(g.title)}</h1>
+<p class="lead">업데이트 ${esc(g.updated)} · 공공데이터 기반 정리</p>
+${paras(g.intro)}
+${sections}
+${g.tips?.length ? `<h2>신청 전에 꼭 확인하세요</h2><ul>${g.tips.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>` : ""}
+<p><a class="cta" href="../c/${slug}.html">${esc(CATEGORIES[slug])} 지원금 전체 보기 →</a></p>`;
+  return layout({ title: `${g.title} | ${CONFIG.siteName}`, description: g.description, canonical: `${CONFIG.siteUrl}/g/${slug}.html`, body });
 }
 
 // 사이트 소개·개인정보처리방침·문의 (애드센스 심사 필수 페이지)
@@ -176,6 +198,7 @@ function write(rel, content) {
 export function buildSite() {
   const items = loadItems();
   const sample = items.some((i) => i.sample);
+  GUIDES = readJson(path.join(path.dirname(PATHS.site), "data", "guides.json"), {});
   fs.rmSync(PATHS.site, { recursive: true, force: true });
 
   const byCat = {};
@@ -190,6 +213,9 @@ export function buildSite() {
   for (const i of items) write(`s/${i.slug}.html`, servicePage(i));
   const info = infoPages(items.length);
   for (const [slug, html] of info) write(`${slug}.html`, html);
+  const itemById = Object.fromEntries(items.map((i) => [i.id, i]));
+  const guides = GUIDES;
+  for (const [slug, g] of Object.entries(guides)) write(`g/${slug}.html`, guidePage(slug, g, itemById));
 
   // 애드센스 ads.txt (ADSENSE_CLIENT=ca-pub-XXXX 설정 시) / 개인 도메인 CNAME (CUSTOM_DOMAIN 설정 시)
   if (CONFIG.adsenseClient) write("ads.txt", `google.com, ${CONFIG.adsenseClient.replace(/^ca-/, "")}, DIRECT, f08c47fec0942fa0\n`);
@@ -198,6 +224,7 @@ export function buildSite() {
   const urls = [
     `${CONFIG.siteUrl}/`,
     ...info.map(([slug]) => `${CONFIG.siteUrl}/${slug}.html`),
+    ...Object.keys(guides).map((slug) => `${CONFIG.siteUrl}/g/${slug}.html`),
     ...Object.keys(byCat).map((s) => `${CONFIG.siteUrl}/c/${s}.html`),
     ...items.map((i) => `${CONFIG.siteUrl}/s/${i.slug}.html`),
   ];

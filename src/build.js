@@ -46,6 +46,8 @@ function layout({ title, description, canonical, body, jsonLd, sample, base = ".
 <link rel="canonical" href="${esc(canonical)}">
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}"><meta property="og:url" content="${esc(canonical)}"><meta property="og:type" content="website"><meta property="og:site_name" content="${esc(CONFIG.siteName)}">
 ${sample ? '<meta name="robots" content="noindex">' : ""}
+${CONFIG.googleVerification ? `<meta name="google-site-verification" content="${esc(CONFIG.googleVerification)}">` : ""}
+${CONFIG.naverVerification ? `<meta name="naver-site-verification" content="${esc(CONFIG.naverVerification)}">` : ""}
 ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>` : ""}
 ${ads}
 <style>${CSS}</style>

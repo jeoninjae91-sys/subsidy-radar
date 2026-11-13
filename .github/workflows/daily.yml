@@ -40,6 +40,8 @@ jobs:
           CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL || 'claude-opus-5-5' }}
           ENRICH_LIMIT: ${{ vars.ENRICH_LIMIT || '200' }}
           ADSENSE_CLIENT: ${{ vars.ADSENSE_CLIENT }}
+          GOOGLE_SITE_VERIFICATION: ${{ vars.GOOGLE_SITE_VERIFICATION }}
+          NAVER_SITE_VERIFICATION: ${{ vars.NAVER_SITE_VERIFICATION }}
         run: node src/run.js
 
       - name: 데이터 변경분 커밋 (다음 실행 때 요약을 다시 하지 않도록)

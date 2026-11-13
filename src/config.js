@@ -25,6 +25,8 @@ export const CONFIG = {
   concurrency: Number(process.env.ENRICH_CONCURRENCY || 4),
   enrichLimit: Number(process.env.ENRICH_LIMIT || 0), // 0 = 제한 없음 (한 번에 처리할 최대 건수)
   adsenseClient: process.env.ADSENSE_CLIENT || "", // ca-pub-XXXX (비우면 광고 코드 미삽입)
+  googleVerification: process.env.GOOGLE_SITE_VERIFICATION || "", // 구글 서치콘솔 HTML 태그의 content 값
+  naverVerification: process.env.NAVER_SITE_VERIFICATION || "", // 네이버 서치어드바이저 HTML 태그의 content 값
 };
 
 // 분야 분류 (사이트 카테고리 = URL 슬러그)

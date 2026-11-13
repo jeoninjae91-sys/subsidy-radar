@@ -1,0 +1,65 @@
+# 매일 오전 6시(KST) 수집 → 요약 → 사이트 생성 → GitHub Pages 배포
+# 저장소 Settings > Secrets and variables > Actions 에 등록할 것:
+#   Secrets:   DATA_GO_KR_KEY, ANTHROPIC_API_KEY
+#   Variables: SITE_URL (예: https://아이디.github.io/subsidy-radar), CLAUDE_MODEL(선택), ENRICH_LIMIT(선택)
+name: daily
+
+on:
+  schedule:
+    - cron: "0 21 * * *" # UTC 21:00 = KST 06:00
+  workflow_dispatch: {}
+
+permissions:
+  contents: write # data/ 변경분 커밋
+  pages: write
+  id-token: write
+
+concurrency:
+  group: daily
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: 파이프라인 실행
+        env:
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SITE_URL: ${{ vars.SITE_URL }}
+          CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL || 'claude-opus-5-5' }}
+          ENRICH_LIMIT: ${{ vars.ENRICH_LIMIT || '200' }}
+          ADSENSE_CLIENT: ${{ vars.ADSENSE_CLIENT }}
+        run: node src/run.js
+
+      - name: 데이터 변경분 커밋 (다음 실행 때 요약을 다시 하지 않도록)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data out
+          git diff --cached --quiet || git commit -m "data: daily update $(date -u +%F)"
+          git push
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

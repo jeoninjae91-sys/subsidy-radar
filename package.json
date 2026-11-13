@@ -1,0 +1,17 @@
+{
+  "name": "subsidy-radar",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "지원금 레이더 - 공공서비스(혜택) API 수집 → Claude 요약·분류 → 정적 사이트·뉴스레터 생성",
+  "scripts": {
+    "fetch": "node src/fetch.js",
+    "enrich": "node src/enrich.js",
+    "build": "node src/build.js",
+    "newsletter": "node src/newsletter.js",
+    "all": "node src/run.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0"
+  }
+}

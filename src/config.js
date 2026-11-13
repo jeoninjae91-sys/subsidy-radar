@@ -19,7 +19,8 @@ export const PATHS = {
 
 export const CONFIG = {
   dataKey: process.env.DATA_GO_KR_KEY || "", // 공공데이터포털 일반 인증키(Decoding)
-  siteUrl: (process.env.SITE_URL || "https://example.com").replace(/\/$/, ""),
+  // 개인 도메인(CUSTOM_DOMAIN)이 있으면 그 주소가 우선
+  siteUrl: (process.env.CUSTOM_DOMAIN ? `https://${process.env.CUSTOM_DOMAIN}` : process.env.SITE_URL || "https://example.com").replace(/\/$/, ""),
   siteName: process.env.SITE_NAME || "지원금 레이더",
   model: process.env.CLAUDE_MODEL || "claude-opus-5-5",
   concurrency: Number(process.env.ENRICH_CONCURRENCY || 4),

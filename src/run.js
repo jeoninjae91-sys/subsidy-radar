@@ -5,6 +5,8 @@ import { enrichAll } from "./enrich.js";
 import { buildSite } from "./build.js";
 import { buildNewsletter } from "./newsletter.js";
 import { collect } from "./batch.js";
+import { writeArticles } from "./articles.js";
+import { buildGuides } from "./guides.js";
 import path from "node:path";
 import { ROOT, readJson } from "./config.js";
 
@@ -18,6 +20,10 @@ if (hasPendingBatch && process.env.ANTHROPIC_API_KEY) await collect();
 
 const e = await enrichAll();
 console.log(`② 가공: ${e.processed}건 처리, ${e.failed}건 실패/대체`);
+
+// 신청 가이드 글 자동 발행 (매일 ARTICLES_PER_DAY편) + 매월 1일 분야별 가이드 갱신
+await writeArticles();
+if (new Date(Date.now() + 9 * 3600e3).getUTCDate() === 1 && process.env.ANTHROPIC_API_KEY) await buildGuides({ refresh: true });
 
 const b = buildSite();
 console.log(`③ 사이트: 페이지 ${b.pages}개 생성`);

@@ -39,6 +39,7 @@ jobs:
           SITE_URL: ${{ vars.SITE_URL }}
           CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL || 'claude-opus-5-5' }}
           ENRICH_LIMIT: ${{ vars.ENRICH_LIMIT || '200' }}
+          ARTICLES_PER_DAY: ${{ vars.ARTICLES_PER_DAY || '2' }}
           ADSENSE_CLIENT: ${{ vars.ADSENSE_CLIENT }}
           CUSTOM_DOMAIN: ${{ vars.CUSTOM_DOMAIN }}
           CONTACT_URL: ${{ vars.CONTACT_URL }}

@@ -4,6 +4,7 @@ import path from "node:path";
 import { CATEGORIES, CONFIG, PATHS, isMain, readJson, todayKST } from "./config.js";
 
 let GUIDES = {}; // 분야별 가이드 (buildSite에서 로드)
+let ARTICLES = {}; // 사업별 신청 가이드 글 (buildSite에서 로드)
 import { closingSoon, ddayLabel, esc, loadItems, recent } from "./items.js";
 
 const CSS = `
@@ -55,7 +56,7 @@ ${ads}
 <style>${CSS}</style>
 </head><body>
 ${sample ? '<div class="notice">⚠️ 샘플 데이터로 만든 미리보기입니다. 실제 지원사업 정보가 아닙니다.</div>' : ""}
-<header class="top"><div class="wrap"><a class="logo" href="${base}index.html">지원금 <span>레이더</span></a><a href="${base}index.html#closing">마감 임박</a></div></header>
+<header class="top"><div class="wrap"><a class="logo" href="${base}index.html">지원금 <span>레이더</span></a><span>${Object.keys(ARTICLES).length ? `<a href="${base}a/index.html">신청 가이드</a> · ` : ""}<a href="${base}index.html#closing">마감 임박</a></span></div></header>
 <main class="wrap">${body}</main>
 <footer><div class="wrap">
 정보 출처: 행정안전부 「대한민국 공공서비스(혜택) 정보」(공공데이터포털) · 요약은 AI가 작성했으며 실제 내용과 다를 수 있습니다. 신청 전 반드시 원문(정부24)을 확인하세요.<br>
@@ -91,6 +92,7 @@ function servicePage(i) {
   <div class="fact"><b>언제까지</b>${i.always_open ? "상시 신청" : esc(i.deadline || r.신청기한 || "-")} <span class="badge ${i.dday !== null && i.dday <= 7 && i.dday >= 0 ? "hot" : ""}">${esc(ddayLabel(i))}</span></div>
 </div>
 <h2>쉽게 말하면</h2><p>${esc(i.easy_explain)}</p>
+${ARTICLES[i.id] ? `<p><a href="../a/${encodeURIComponent(i.id)}.html">📝 ${esc(ARTICLES[i.id].title)} — 자세한 신청 가이드 읽기</a></p>` : ""}
 ${i.steps?.length ? `<h2>신청 방법</h2><ol class="steps">${i.steps.map((s) => `<li>${esc(s)}</li>`).join("")}</ol>` : ""}
 ${r.상세조회URL ? `<a class="cta" href="${esc(r.상세조회URL)}" target="_blank" rel="noopener nofollow">정부24 원문 확인하기 →</a>` : ""}
 ${i.faq?.length ? `<h2>자주 묻는 질문</h2>${i.faq.map((f) => `<details><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join("")}` : ""}
@@ -127,6 +129,7 @@ ${soon.length ? `<ul class="list">${soon.map((i) => itemRow(i)).join("")}</ul>` 
 <h2>🆕 새로 올라온 지원금</h2>
 ${fresh.length ? `<ul class="list">${fresh.map((i) => itemRow(i)).join("")}</ul>` : '<p class="lead">최근 2주간 새 사업이 없습니다.</p>'}
 <h2>🔥 많이 찾는 지원금</h2><ul class="list">${popular.map((i) => itemRow(i)).join("")}</ul>
+${Object.keys(ARTICLES).length ? `<h2>📝 새 신청 가이드</h2><ul class="list">${Object.entries(ARTICLES).sort((a, b) => b[1].published.localeCompare(a[1].published)).slice(0, 6).map(([id, a]) => `<li class="item"><div class="body"><a class="title" href="a/${encodeURIComponent(id)}.html">${esc(a.title)}</a><div class="sum">${esc(a.description)}</div></div></li>`).join("")}</ul><p><a href="a/index.html">신청 가이드 전체 보기 →</a></p>` : ""}
 ${Object.keys(GUIDES).length ? `<h2>📘 분야별 지원금 가이드</h2><ul class="list">${Object.entries(GUIDES).map(([s, g]) => `<li class="item"><div class="body"><a class="title" href="g/${s}.html">${esc(g.title)}</a><div class="sum">${esc(g.description)}</div></div></li>`).join("")}</ul>` : ""}
 <h2>분야별로 보기</h2>
 <ul class="cats">${Object.entries(CATEGORIES).filter(([s]) => byCat[s]?.length).map(([s, n]) => `<li><a href="c/${s}.html">${esc(n)}<br><small>${byCat[s].length}건</small></a></li>`).join("")}</ul>`;
@@ -149,6 +152,36 @@ ${sections}
 ${g.tips?.length ? `<h2>신청 전에 꼭 확인하세요</h2><ul>${g.tips.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>` : ""}
 <p><a class="cta" href="../c/${slug}.html">${esc(CATEGORIES[slug])} 지원금 전체 보기 →</a></p>`;
   return layout({ title: `${g.title} | ${CONFIG.siteName}`, description: g.description, canonical: `${CONFIG.siteUrl}/g/${slug}.html`, body });
+}
+
+// 사업별 신청 가이드 글 (/a/<id>.html)
+function articlePage(id, a, item) {
+  const s = a.summary || {};
+  const body = `<div class="crumb"><a href="../index.html">홈</a> › <a href="index.html">신청 가이드</a>${item ? ` › <a href="../c/${item.category}.html">${esc(item.categoryName)}</a>` : ""}</div>
+<h1>${esc(a.title)}</h1>
+<p class="lead">발행 ${esc(a.published)}${item ? ` · 원문 수정일 ${esc(item.updated)}` : ""}</p>
+<div class="facts">
+  <div class="fact"><b>대상</b>${esc(s.target || "-")}</div>
+  <div class="fact"><b>지원 내용</b>${esc(s.amount || "-")}</div>
+  <div class="fact"><b>신청 기간</b>${esc(s.period || "-")}${item ? ` <span class="badge ${item.dday !== null && item.dday >= 0 && item.dday <= 7 ? "hot" : ""}">${esc(ddayLabel(item))}</span>` : ""}</div>
+  <div class="fact"><b>신청처</b>${esc(s.where || "-")}</div>
+</div>
+${paras(a.intro)}
+${a.sections.map((x) => `<h2>${esc(x.heading)}</h2>${paras(x.body)}`).join("")}
+${a.faq?.length ? `<h2>자주 묻는 질문</h2>${a.faq.map((f) => `<details><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join("")}` : ""}
+${item ? `<p><a class="cta" href="../s/${item.slug}.html">원문 정보·정부24 링크 보기 →</a></p>` : ""}
+<p class="lead" style="font-size:13px">이 글은 행정안전부 공공서비스(혜택) 정보를 바탕으로 정리했습니다. 신청 전 반드시 원문 공고를 확인하세요.</p>`;
+  const jsonLd = a.faq?.length
+    ? { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: a.faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) }
+    : null;
+  return layout({ title: a.title, description: a.description, canonical: `${CONFIG.siteUrl}/a/${encodeURIComponent(id)}.html`, body, jsonLd });
+}
+
+function articleListPage(list) {
+  const body = `<div class="crumb"><a href="../index.html">홈</a></div>
+<h1>지원금 신청 가이드</h1><p class="lead">많이 찾는 지원사업을 하나씩 골라 대상·금액·신청 방법을 자세히 정리했어요. 매일 새 글이 올라옵니다.</p>
+<ul class="list">${list.map(([id, a]) => `<li class="item"><div class="body"><a class="title" href="${encodeURIComponent(id)}.html">${esc(a.title)}</a><div class="sum">${esc(a.description)}</div></div><span class="badge">${esc(a.published.slice(5))}</span></li>`).join("")}</ul>`;
+  return layout({ title: `지원금 신청 가이드 | ${CONFIG.siteName}`, description: "많이 찾는 정부 지원금의 대상·금액·신청 방법을 자세히 정리한 가이드 모음입니다.", canonical: `${CONFIG.siteUrl}/a/index.html`, body });
 }
 
 // 사이트 소개·개인정보처리방침·문의 (애드센스 심사 필수 페이지)
@@ -199,6 +232,7 @@ export function buildSite() {
   const items = loadItems();
   const sample = items.some((i) => i.sample);
   GUIDES = readJson(path.join(path.dirname(PATHS.site), "data", "guides.json"), {});
+  ARTICLES = readJson(path.join(path.dirname(PATHS.site), "data", "articles.json"), {});
   fs.rmSync(PATHS.site, { recursive: true, force: true });
 
   const byCat = {};
@@ -216,6 +250,9 @@ export function buildSite() {
   const itemById = Object.fromEntries(items.map((i) => [i.id, i]));
   const guides = GUIDES;
   for (const [slug, g] of Object.entries(guides)) write(`g/${slug}.html`, guidePage(slug, g, itemById));
+  const articleList = Object.entries(ARTICLES).sort((a, b) => b[1].published.localeCompare(a[1].published));
+  for (const [id, a] of articleList) write(`a/${encodeURIComponent(id)}.html`, articlePage(id, a, itemById[id]));
+  if (articleList.length) write("a/index.html", articleListPage(articleList));
 
   // 애드센스 ads.txt (ADSENSE_CLIENT=ca-pub-XXXX 설정 시) / 개인 도메인 CNAME (CUSTOM_DOMAIN 설정 시)
   if (CONFIG.adsenseClient) write("ads.txt", `google.com, ${CONFIG.adsenseClient.replace(/^ca-/, "")}, DIRECT, f08c47fec0942fa0\n`);
@@ -225,6 +262,8 @@ export function buildSite() {
     `${CONFIG.siteUrl}/`,
     ...info.map(([slug]) => `${CONFIG.siteUrl}/${slug}.html`),
     ...Object.keys(guides).map((slug) => `${CONFIG.siteUrl}/g/${slug}.html`),
+    ...(articleList.length ? [`${CONFIG.siteUrl}/a/index.html`] : []),
+    ...articleList.map(([id]) => `${CONFIG.siteUrl}/a/${encodeURIComponent(id)}.html`),
     ...Object.keys(byCat).map((s) => `${CONFIG.siteUrl}/c/${s}.html`),
     ...items.map((i) => `${CONFIG.siteUrl}/s/${i.slug}.html`),
   ];

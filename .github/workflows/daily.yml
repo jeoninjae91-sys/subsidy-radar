@@ -40,6 +40,8 @@ jobs:
           CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL || 'claude-opus-5-5' }}
           ENRICH_LIMIT: ${{ vars.ENRICH_LIMIT || '200' }}
           ADSENSE_CLIENT: ${{ vars.ADSENSE_CLIENT }}
+          CUSTOM_DOMAIN: ${{ vars.CUSTOM_DOMAIN }}
+          CONTACT_URL: ${{ vars.CONTACT_URL }}
           GOOGLE_SITE_VERIFICATION: ${{ vars.GOOGLE_SITE_VERIFICATION }}
           NAVER_SITE_VERIFICATION: ${{ vars.NAVER_SITE_VERIFICATION }}
         run: node src/run.js

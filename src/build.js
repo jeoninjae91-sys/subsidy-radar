@@ -57,6 +57,7 @@ ${sample ? '<div class="notice">⚠️ 샘플 데이터로 만든 미리보기�
 <main class="wrap">${body}</main>
 <footer><div class="wrap">
 정보 출처: 행정안전부 「대한민국 공공서비스(혜택) 정보」(공공데이터포털) · 요약은 AI가 작성했으며 실제 내용과 다를 수 있습니다. 신청 전 반드시 원문(정부24)을 확인하세요.<br>
+<a href="${base}about.html">소개</a> · <a href="${base}privacy.html">개인정보처리방침</a> · <a href="${base}contact.html">문의</a><br>
 마지막 업데이트 ${todayKST()} · © ${esc(CONFIG.siteName)}
 </div></footer>
 </body></html>`;
@@ -128,6 +129,44 @@ ${fresh.length ? `<ul class="list">${fresh.map((i) => itemRow(i)).join("")}</ul>
   return layout({ title: `${CONFIG.siteName} - 마감 임박 정부지원금·혜택 한눈에`, description: "청년·출산·소상공인·노인 등 정부와 지자체 지원금을 매일 모아 쉬운 말로 정리하고 마감일을 알려드립니다.", canonical: `${CONFIG.siteUrl}/`, body, sample, base: "" });
 }
 
+// 사이트 소개·개인정보처리방침·문의 (애드센스 심사 필수 페이지)
+function infoPages(count) {
+  const page = (slug, title, description, body) =>
+    [slug, layout({ title: `${title} | ${CONFIG.siteName}`, description, canonical: `${CONFIG.siteUrl}/${slug}.html`, base: "",
+      body: `<div class="crumb"><a href="index.html">홈</a></div><h1>${esc(title)}</h1>${body}` })];
+  const issues = CONFIG.contactUrl;
+  return [
+    page("about", "지원금 레이더 소개", "지원금 레이더는 정부·지자체 지원사업을 매일 모아 쉬운 말로 정리하는 정보 사이트입니다.", `
+<p>지원금 레이더는 "받을 수 있는데 몰라서 못 받는 지원금"을 줄이기 위해 만든 정보 사이트입니다.</p>
+<h2>무엇을 하나요</h2>
+<ul>
+<li>행정안전부가 공개하는 「대한민국 공공서비스(혜택) 정보」에서 정부·지자체·공공기관 지원사업 약 ${count.toLocaleString()}건을 <b>매일</b> 가져옵니다.</li>
+<li>사업마다 <b>누가 · 얼마 · 언제까지 · 어떻게</b> 신청하는지 쉬운 말로 정리하고, 마감이 가까운 순서로 보여 드립니다.</li>
+<li>청년, 출산·육아, 소상공인, 노인, 장애인 등 분야별로 찾아볼 수 있습니다.</li>
+</ul>
+<h2>정보는 어떻게 만들어지나요</h2>
+<p>원문 데이터를 AI(Claude)가 요약하고, 모든 페이지에 원문 정보와 정부24 원문 링크, 원문 수정일을 함께 표시합니다. 요약은 이해를 돕기 위한 것이며 실제 내용과 다를 수 있으니, <b>신청 전 반드시 원문을 확인</b>해 주세요.</p>
+<h2>운영 원칙</h2>
+<ul><li>지원사업 신청을 대행하거나 수수료를 받지 않습니다.</li><li>정부·공공기관과 무관한 민간 정보 사이트입니다.</li><li>잘못된 정보를 발견하시면 <a href="contact.html">문의</a>로 알려 주세요.</li></ul>`),
+    page("privacy", "개인정보처리방침", "지원금 레이더의 개인정보처리방침입니다.", `
+<p>지원금 레이더(이하 "사이트")는 이용자의 개인정보를 중요하게 생각하며, 관련 법령을 준수합니다.</p>
+<h2>1. 수집하는 개인정보</h2>
+<p>사이트는 회원가입이 없으며, 이용자가 직접 입력하는 개인정보를 수집하지 않습니다.</p>
+<h2>2. 쿠키 및 광고</h2>
+<p>사이트는 Google AdSense 등 제3자 광고 서비스를 사용할 수 있습니다. Google을 포함한 제3자 공급업체는 쿠키를 사용하여 이용자의 이 사이트 및 다른 사이트 방문 기록을 바탕으로 광고를 게재합니다. Google은 광고 쿠키를 사용하여 이용자에게 맞춤 광고를 제공할 수 있습니다.</p>
+<p>이용자는 <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener">Google 광고 설정</a>에서 맞춤 광고를 사용 중지할 수 있으며, <a href="https://www.aboutads.info" target="_blank" rel="noopener">www.aboutads.info</a>에서 제3자 공급업체의 맞춤 광고 쿠키를 사용 중지할 수 있습니다. 브라우저 설정으로 쿠키 저장을 거부할 수도 있습니다.</p>
+<h2>3. 접속 기록</h2>
+<p>사이트를 호스팅하는 서비스(GitHub Pages) 및 검색·광고 서비스 제공자가 서비스 제공과 보안을 위해 접속 기록(IP 주소, 브라우저 정보 등)을 처리할 수 있습니다.</p>
+<h2>4. 문의</h2>
+<p>개인정보 관련 문의는 <a href="contact.html">문의 페이지</a>를 이용해 주세요.</p>
+<p class="lead" style="font-size:13px">시행일: ${todayKST().slice(0, 7)}-01</p>`),
+    page("contact", "문의", "지원금 레이더 문의 안내", `
+<p>정보 오류 제보, 제휴, 그 밖의 문의는 아래로 보내 주세요.</p>
+<p><a class="cta" href="${esc(issues)}" target="_blank" rel="noopener">문의 남기기 →</a></p>
+<p class="lead">지원사업 자격·신청 결과 등 개별 사업에 대한 문의는 각 사업 페이지의 소관기관 연락처나 정부24로 해 주세요.</p>`),
+  ];
+}
+
 function write(rel, content) {
   const file = path.join(PATHS.site, rel);
   fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -149,9 +188,16 @@ export function buildSite() {
   write("index.html", indexPage(items, byCat, sample));
   for (const [slug, list] of Object.entries(byCat)) write(`c/${slug}.html`, categoryPage(slug, list, sample));
   for (const i of items) write(`s/${i.slug}.html`, servicePage(i));
+  const info = infoPages(items.length);
+  for (const [slug, html] of info) write(`${slug}.html`, html);
+
+  // 애드센스 ads.txt (ADSENSE_CLIENT=ca-pub-XXXX 설정 시) / 개인 도메인 CNAME (CUSTOM_DOMAIN 설정 시)
+  if (CONFIG.adsenseClient) write("ads.txt", `google.com, ${CONFIG.adsenseClient.replace(/^ca-/, "")}, DIRECT, f08c47fec0942fa0\n`);
+  if (CONFIG.customDomain) write("CNAME", `${CONFIG.customDomain}\n`);
 
   const urls = [
     `${CONFIG.siteUrl}/`,
+    ...info.map(([slug]) => `${CONFIG.siteUrl}/${slug}.html`),
     ...Object.keys(byCat).map((s) => `${CONFIG.siteUrl}/c/${s}.html`),
     ...items.map((i) => `${CONFIG.siteUrl}/s/${i.slug}.html`),
   ];

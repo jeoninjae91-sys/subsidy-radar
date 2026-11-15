@@ -6,6 +6,7 @@ import { CATEGORIES, CONFIG, PATHS, isMain, readJson, todayKST } from "./config.
 let GUIDES = {}; // 분야별 가이드 (buildSite에서 로드)
 let ARTICLES = {}; // 사업별 신청 가이드 글 (buildSite에서 로드)
 import { closingSoon, ddayLabel, esc, loadItems, recent } from "./items.js";
+import { buildCare } from "./care-build.js";
 
 const CSS = `
 :root{--bg:#f7f8fa;--card:#fff;--text:#1a1d23;--muted:#5d6472;--line:#e3e6eb;--accent:#1f6feb;--hot:#d1242f;--ok:#1a7f37;--chip:#eef2f8}
@@ -35,9 +36,13 @@ table.src{width:100%;border-collapse:collapse;font-size:14px;background:var(--ca
 .cta{display:inline-block;background:var(--accent);color:#fff;border-radius:10px;padding:12px 18px;font-weight:700;margin:12px 0}.cta:hover{text-decoration:none;opacity:.9}
 footer{color:var(--muted);font-size:13px;border-top:1px solid var(--line);margin-top:48px;padding:24px 0 40px}
 .crumb{font-size:14px;color:var(--muted);margin-top:16px}
+table.src.t th{width:auto}a.chip:hover{text-decoration:none;color:var(--accent)}
 `;
 
-function layout({ title, description, canonical, body, jsonLd, sample, base = "../" }) {
+// 돌봄(장기요양기관) 섹션은 CARE_PUBLISH=1 일 때만 정식 발행·메뉴 노출
+const CARE_ON = process.env.CARE_PUBLISH === "1";
+
+export function layout({ title, description, canonical, body, jsonLd, sample, base = "../", source }) {
   const ads = CONFIG.adsenseClient
     ? `<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${esc(CONFIG.adsenseClient)}" crossorigin="anonymous"></script>`
     : "";
@@ -56,10 +61,10 @@ ${ads}
 <style>${CSS}</style>
 </head><body>
 ${sample ? '<div class="notice">⚠️ 샘플 데이터로 만든 미리보기입니다. 실제 지원사업 정보가 아닙니다.</div>' : ""}
-<header class="top"><div class="wrap"><a class="logo" href="${base}index.html">지원금 <span>레이더</span></a><span>${Object.keys(ARTICLES).length ? `<a href="${base}a/index.html">신청 가이드</a> · ` : ""}<a href="${base}index.html#closing">마감 임박</a></span></div></header>
+<header class="top"><div class="wrap"><a class="logo" href="${base}index.html">지원금 <span>레이더</span></a><span>${CARE_ON ? `<a href="${base}care/index.html">요양기관 찾기</a> · ` : ""}${Object.keys(ARTICLES).length ? `<a href="${base}a/index.html">신청 가이드</a> · ` : ""}<a href="${base}index.html#closing">마감 임박</a></span></div></header>
 <main class="wrap">${body}</main>
 <footer><div class="wrap">
-정보 출처: 행정안전부 「대한민국 공공서비스(혜택) 정보」(공공데이터포털) · 요약은 AI가 작성했으며 실제 내용과 다를 수 있습니다. 신청 전 반드시 원문(정부24)을 확인하세요.<br>
+${source || "정보 출처: 행정안전부 「대한민국 공공서비스(혜택) 정보」(공공데이터포털) · 요약은 AI가 작성했으며 실제 내용과 다를 수 있습니다. 신청 전 반드시 원문(정부24)을 확인하세요."}<br>
 <a href="${base}about.html">소개</a> · <a href="${base}privacy.html">개인정보처리방침</a> · <a href="${base}contact.html">문의</a><br>
 마지막 업데이트 ${todayKST()} · © ${esc(CONFIG.siteName)}
 </div></footer>
@@ -267,9 +272,20 @@ export function buildSite() {
     ...Object.keys(byCat).map((s) => `${CONFIG.siteUrl}/c/${s}.html`),
     ...items.map((i) => `${CONFIG.siteUrl}/s/${i.slug}.html`),
   ];
-  write("sitemap.xml", `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((u) => `<url><loc>${esc(u)}</loc><lastmod>${todayKST()}</lastmod></url>`).join("\n")}\n</urlset>\n`);
-  write("robots.txt", sample ? "User-agent: *\nDisallow: /\n" : `User-agent: *\nAllow: /\nSitemap: ${CONFIG.siteUrl}/sitemap.xml\n`);
-  return { pages: urls.length, items: items.length, sample };
+  const sitemap = (list) => `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${list.map((u) => `<url><loc>${esc(u)}</loc><lastmod>${todayKST()}</lastmod></url>`).join("\n")}\n</urlset>\n`;
+  write("sitemap.xml", sitemap(urls));
+
+  // 돌봄 섹션: 실데이터가 있고 CARE_PUBLISH=1 일 때만 발행. 사이트맵은 URL 5만 개 한도 때문에 따로 둔다.
+  const care = CARE_ON && !sample ? buildCare() : { urls: [] };
+  const careMaps = [];
+  for (let i = 0; i < care.urls.length; i += 40000) {
+    const name = `sitemap-care${careMaps.length ? `-${careMaps.length + 1}` : ""}.xml`;
+    write(name, sitemap(care.urls.slice(i, i + 40000)));
+    careMaps.push(name);
+  }
+
+  write("robots.txt", sample ? "User-agent: *\nDisallow: /\n" : `User-agent: *\nAllow: /\nSitemap: ${CONFIG.siteUrl}/sitemap.xml\n${careMaps.map((m) => `Sitemap: ${CONFIG.siteUrl}/${m}\n`).join("")}`);
+  return { pages: urls.length + care.urls.length, items: items.length, sample, carePages: care.urls.length };
 }
 
 if (isMain(import.meta.url)) {

@@ -25,6 +25,17 @@ console.log(`② 가공: ${e.processed}건 처리, ${e.failed}건 실패/대체`
 await writeArticles();
 if (new Date(Date.now() + 9 * 3600e3).getUTCDate() === 1 && process.env.ANTHROPIC_API_KEY) await buildGuides({ refresh: true });
 
+// 돌봄(장기요양기관) 수집 — 실패해도 지원금 사이트 발행은 계속한다
+if (process.env.CARE_PUBLISH === "1") {
+  try {
+    const { fetchCare } = await import("./care-fetch.js");
+    const c = await fetchCare();
+    if (!c.skipped) console.log(`②-2 돌봄: 운영 중 ${c.total}곳 · 오늘 상세 ${c.done}곳 · 상세 대기 ${c.left}곳`);
+  } catch (err) {
+    console.log(`②-2 돌봄 수집 실패 (기존 데이터로 계속): ${err.message}`);
+  }
+}
+
 const b = buildSite();
 console.log(`③ 사이트: 페이지 ${b.pages}개 생성`);
 

@@ -9,7 +9,9 @@
     "enrich": "node src/enrich.js",
     "build": "node src/build.js",
     "newsletter": "node src/newsletter.js",
-    "all": "node src/run.js"
+    "all": "node src/run.js",
+    "care:fetch": "node src/care-fetch.js",
+    "care:build": "node src/care-build.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0"

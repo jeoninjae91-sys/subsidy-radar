@@ -1,0 +1,46 @@
+{
+  "regions": {
+    "1100000000": "서울특별시",
+    "1168000000": "서울특별시 강남구",
+    "1168010100": "서울특별시 강남구 역삼동",
+    "1144000000": "서울특별시 마포구",
+    "1144010100": "서울특별시 마포구 아현동"
+  },
+  "institutions": {
+    "19999000001-A03": {
+      "id": "19999000001-A03", "sym": "19999000001", "pttn": "A03", "name": "(샘플) 햇살요양원",
+      "sido": "11", "sgg": "680", "designated": "20150302", "registered": "20150220", "_sample": true,
+      "detail": {
+        "checkedAt": "2026-11-15",
+        "general": { "hmPostNo": "06234", "adminAddr": "서울특별시 강남구 샘플로 12 3층 (역삼동)", "locTelNo_1": "02", "locTelNo_2": "000", "locTelNo_3": "0000", "longTermPeribRgtDt": "20150302" },
+        "people": { "totPer": "49", "maNowPer": "11", "fmNowPer": "33", "maRsvPer": "1", "fmRsvPer": "4" },
+        "staff": { "equipLong": "1", "socWel": "2", "nur": "1", "nurArticle": "2", "physicalMTret": "1", "recuProt_1": "20", "nut": "1", "cook": "3" },
+        "etc": { "hmpgAddr": "", "tfMth": "지하철 2호선 샘플역 3번 출구 도보 5분", "pkngEquip": "지상 5대" },
+        "nonpay": [
+          { "nonpayKind": "1", "prodBase": "1식 3500원 X 3식/일", "nonpayTgtAmt": "3500", "uptDt": "20260301" },
+          { "nonpayKind": "2", "prodBase": "30000원 (일)", "nonpayTgtAmt": "30000", "uptDt": "20260301" }
+        ]
+      }
+    },
+    "19999000002-B03": {
+      "id": "19999000002-B03", "sym": "19999000002", "pttn": "B03", "name": "(샘플) 늘봄주간보호센터",
+      "sido": "11", "sgg": "680", "designated": "20200601", "registered": "20200520", "_sample": true,
+      "detail": {
+        "checkedAt": "2026-11-15",
+        "general": { "hmPostNo": "06235", "adminAddr": "서울특별시 강남구 샘플로 40 2층 (역삼동)", "locTelNo_1": "02", "locTelNo_2": "000", "locTelNo_3": "0001" },
+        "people": { "totPer": "30", "maNowPer": "12", "fmNowPer": "18", "maRsvPer": "0", "fmRsvPer": "0" },
+        "staff": { "equipLong": "1", "socWel": "1", "nurArticle": "1", "recuProt_1": "5", "cook": "1" },
+        "etc": null,
+        "nonpay": []
+      }
+    },
+    "19999000003-B01": {
+      "id": "19999000003-B01", "sym": "19999000003", "pttn": "B01", "name": "(샘플) 다정방문요양센터",
+      "sido": "11", "sgg": "680", "designated": "20210105", "registered": "20201228", "_sample": true
+    },
+    "19999000004-A04": {
+      "id": "19999000004-A04", "sym": "19999000004", "pttn": "A04", "name": "(샘플) 고운공동생활가정",
+      "sido": "11", "sgg": "440", "designated": "20180910", "registered": "20180901", "_sample": true
+    }
+  }
+}

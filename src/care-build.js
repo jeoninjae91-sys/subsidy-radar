@@ -9,7 +9,7 @@ import path from "node:path";
 import { CONFIG, PATHS, isMain, todayKST } from "./config.js";
 import { esc } from "./items.js";
 import { layout } from "./build.js";
-import { buildCareGuides, guideLinks, scrollTables } from "./care-guides.js";
+import { CARE_OG, buildCareGuides, guideLinks, heroImg, scrollTables } from "./care-guides.js";
 import { currentRates, nonpaySummary } from "./care-rates.js";
 import { SIDO, isFacilityType, isListedType, loadCare, sggCode, sggFullName, sggShortName, typeName } from "./care-common.js";
 
@@ -119,7 +119,7 @@ ${nonpay.map((x) => `<tr><td>${esc(NONPAY[x.nonpayKind] || "기타")}</td><td>${
   return layout({
     title: `${r.name} - ${sggShortName(regions, r.sido, r.sgg)} ${type} 정원·빈자리·비용 | ${CONFIG.siteName}`,
     description: `${region} ${r.name}의 정원 ${f.cap ?? "-"}명, 현재 인원 ${f.now ?? "-"}명, 인력 현황과 비급여 비용을 국민건강보험공단 공개 자료로 정리했습니다.`,
-    canonical: `${CONFIG.siteUrl}/care/f/${r.id}.html`, body: scrollTables(body), sample, base: "../../", source: SOURCE,
+    canonical: `${CONFIG.siteUrl}/care/f/${r.id}.html`, body: scrollTables(body), sample, base: "../../", source: SOURCE, image: CARE_OG,
   });
 }
 
@@ -141,7 +141,7 @@ ${sections}`;
   return layout({
     title: `${short} 요양원·주간보호센터 ${uniq(list)}곳 정원·빈자리 | ${CONFIG.siteName}`,
     description: `${full}의 요양원, 주야간보호, 방문요양 등 장기요양기관 ${uniq(list)}곳의 정원·현재 인원·연락처를 국민건강보험공단 공개 자료로 정리했습니다.`,
-    canonical: `${CONFIG.siteUrl}/care/r/${sgg}.html`, body, sample, base: "../../", source: SOURCE,
+    canonical: `${CONFIG.siteUrl}/care/r/${sgg}.html`, body, sample, base: "../../", source: SOURCE, image: CARE_OG,
   });
 }
 
@@ -155,7 +155,7 @@ function sidoPage(sido, bySgg, regions, sample) {
   return layout({
     title: `${name} 요양원·주간보호센터 찾기 | ${CONFIG.siteName}`,
     description: `${name} 시군구별 요양원·주야간보호·방문요양 기관 ${total.toLocaleString()}곳을 정리했습니다.`,
-    canonical: `${CONFIG.siteUrl}/care/r/${sido}.html`, body, sample, base: "../../", source: SOURCE,
+    canonical: `${CONFIG.siteUrl}/care/r/${sido}.html`, body, sample, base: "../../", source: SOURCE, image: CARE_OG,
   });
 }
 
@@ -164,6 +164,7 @@ function carePage(tree, regions, total, sample) {
   const body = `
 <h1>부모님 요양원·주간보호센터,<br>우리 동네에서 찾기</h1>
 <p class="lead">전국 장기요양기관 ${total.toLocaleString()}곳의 정원·빈자리·인력·비급여 비용을 국민건강보험공단 공개 자료로 정리했습니다.</p>
+${heroImg("hero", "부모님과 함께 태블릿으로 동네 요양기관을 찾아보는 모습", "../")}
 <h2>지역 고르기</h2>
 <ul class="cats">${sidos.map((s) => `<li><a href="r/${s}.html">${esc(regions[String(s).padEnd(10, "0")] || SIDO[s] || s)}<br><small>${uniq(Object.values(tree[s]).flat()).toLocaleString()}곳</small></a></li>`).join("")}</ul>
 <h2>처음이라면 이 순서로</h2>
@@ -179,7 +180,7 @@ function carePage(tree, regions, total, sample) {
   return layout({
     title: `우리 동네 요양원·주간보호센터 찾기 - 정원·빈자리·비용 | ${CONFIG.siteName}`,
     description: "전국 요양원·주야간보호·방문요양 기관의 정원, 빈자리, 인력, 비급여 비용을 지역별로 정리했습니다. 국민건강보험공단 공개 자료 기반.",
-    canonical: `${CONFIG.siteUrl}/care/index.html`, body, sample, base: "../", source: SOURCE,
+    canonical: `${CONFIG.siteUrl}/care/index.html`, body, sample, base: "../", source: SOURCE, image: CARE_OG,
   });
 }
 

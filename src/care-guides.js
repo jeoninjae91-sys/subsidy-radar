@@ -8,6 +8,9 @@ import { GRADE_LABEL, currentRates, nonpaySummary } from "./care-rates.js";
 const won = (v) => `${Math.round(v).toLocaleString("ko-KR")}원`;
 // 열이 많은 표는 좁은 화면에서 옆으로 밀 수 있게 감싼다
 export const scrollTables = (html) => html.replace(/<table class="src t">[\s\S]*?<\/table>/g, (t) => `<div style="overflow-x:auto">${t}</div>`);
+// 삽화(static/img/care/*.webp, AI로 그린 일러스트)와 공유용 대표 이미지
+export const CARE_OG = `${CONFIG.siteUrl}/img/care/og.jpg`;
+export const heroImg = (name, alt, base) => `<img class="hero" src="${base}img/care/${name}.webp" width="1200" height="675" alt="${esc(alt)}" decoding="async" fetchpriority="high">`;
 const median = (a) => (a.length ? [...a].sort((x, y) => x - y)[a.length >> 1] : null);
 
 const SOURCE = (R) => `금액 기준: 보건복지부 장기요양 급여비용 고시(${R.year}년 적용분)와 국민건강보험공단 공개 자료. 계산 결과는 참고용 추정치이며 실제 청구액과 다를 수 있습니다. 정확한 금액과 감경 대상 여부는 이용할 기관이나 국민건강보험공단(1577-1000)에 확인하세요. 이 사이트는 기관을 추천·알선하지 않습니다.`;
@@ -102,6 +105,7 @@ function costPage(R, stats, sample) {
   <p class="hint" id="warn"></p>
 </div>
 
+${heroImg("cost", "책상 위에 놓인 계산기와 동전, 달력, 요양원 모형", "../").replace(' fetchpriority="high"', ' loading="lazy"')}
 <h2>계산 방법</h2>
 <ul>
 <li><b>급여 본인부담금</b> = 하루 급여비용 × 이용 일수 × 본인부담률. 본인부담률은 입소 시설 20%, 주야간보호 같은 재가급여 15%입니다. 나머지는 국민건강보험공단이 기관에 직접 냅니다.</li>
@@ -183,7 +187,7 @@ ${stats.roomCount ? `<li>상급침실료를 신고한 요양원 ${stats.roomCoun
   return layout({
     title: `요양원 비용 계산기 ${R.year} - 등급별 한 달 본인부담금 | ${CONFIG.siteName}`,
     description: `장기요양등급과 시설 종류를 고르면 요양원·공동생활가정·주야간보호센터의 한 달 본인부담금과 식사재료비를 계산합니다. ${R.year}년 급여비용 기준.`,
-    canonical: `${CONFIG.siteUrl}/care/cost.html`, body: scrollTables(body), sample, base: "../", source: SOURCE(R),
+    canonical: `${CONFIG.siteUrl}/care/cost.html`, body: scrollTables(body), sample, base: "../", source: SOURCE(R), image: CARE_OG,
     jsonLd: { "@context": "https://schema.org", "@type": "WebApplication", name: "요양원 비용 계산기", applicationCategory: "FinanceApplication", operatingSystem: "Web", offers: { "@type": "Offer", price: "0", priceCurrency: "KRW" }, url: `${CONFIG.siteUrl}/care/cost.html` },
   });
 }
@@ -192,6 +196,7 @@ ${stats.roomCount ? `<li>상급침실료를 신고한 요양원 ${stats.roomCoun
 const GUIDES = [
   {
     slug: "grade-apply",
+    alt: "공단 직원이 집을 방문해 어르신과 가족에게 조사 내용을 설명하는 모습",
     title: "장기요양등급 신청 방법: 대상부터 결과 통보까지",
     description: "장기요양등급을 누가, 어디서, 어떻게 신청하는지와 방문조사·의사소견서·등급판정까지의 순서를 정리했습니다.",
     faq: [
@@ -247,6 +252,7 @@ const GUIDES = [
   },
   {
     slug: "nursing-home-vs-hospital",
+    alt: "왼쪽은 요양보호사가 식사를 돕는 요양원, 오른쪽은 의사와 간호사가 진료하는 요양병원",
     title: "요양원과 요양병원의 차이: 비용·입소 조건 비교",
     description: "요양원과 요양병원은 적용되는 보험, 들어가는 조건, 간병비 부담이 다릅니다. 부모님 상태에 맞는 곳을 고르는 기준을 정리했습니다.",
     faq: [
@@ -275,6 +281,7 @@ const GUIDES = [
   },
   {
     slug: "how-to-choose",
+    alt: "체크리스트를 들고 요양원을 방문한 보호자를 직원이 맞이하는 모습",
     title: "요양원 고르는 법: 방문 전에 확인할 7가지",
     description: "요양원을 고를 때 공개 자료로 미리 확인할 수 있는 정원·빈자리·인력·비급여 비용과, 직접 방문해서 봐야 할 것들을 정리했습니다.",
     body: (R, stats) => `
@@ -299,6 +306,7 @@ const GUIDES = [
   },
   {
     slug: "copay-reduction",
+    alt: "식탁에서 계산기와 고지서를 앞에 두고 웃고 있는 아버지와 딸",
     title: "장기요양 본인부담금 감경: 40%·60% 덜 내는 대상",
     description: "장기요양 본인부담금은 소득 수준에 따라 40% 또는 60% 줄어들고, 기초생활수급자는 내지 않습니다. 감경 뒤 실제 부담률과 금액을 정리했습니다.",
     body: (R) => {
@@ -330,6 +338,7 @@ function guidePage(g, R, stats, sample) {
   const body = `<div class="crumb"><a href="../index.html">요양기관 찾기</a> › 안내</div>
 <h1>${esc(g.title)}</h1>
 <p class="lead">${esc(g.description)}</p>
+${heroImg(g.slug, g.alt, "../../")}
 ${g.body(R, stats)}
 <h2>다른 안내</h2>
 <ul><li><a href="../cost.html">요양원·주간보호센터 비용 계산기</a></li>${GUIDES.filter((x) => x.slug !== g.slug).map((x) => `<li><a href="${x.slug}.html">${esc(x.title)}</a></li>`).join("")}</ul>
@@ -338,7 +347,7 @@ ${g.body(R, stats)}
   const faq = g.faq ? { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: g.faq.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })) } : null;
   return layout({
     title: `${g.title} | ${CONFIG.siteName}`, description: g.description,
-    canonical: `${CONFIG.siteUrl}/care/g/${g.slug}.html`, body: scrollTables(body), sample, base: "../../", source: SOURCE(R),
+    canonical: `${CONFIG.siteUrl}/care/g/${g.slug}.html`, body: scrollTables(body), sample, base: "../../", source: SOURCE(R), image: CARE_OG,
     jsonLd: faq ? [article, faq] : article,
   });
 }

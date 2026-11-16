@@ -36,13 +36,14 @@ table.src{width:100%;border-collapse:collapse;font-size:14px;background:var(--ca
 .cta{display:inline-block;background:var(--accent);color:#fff;border-radius:10px;padding:12px 18px;font-weight:700;margin:12px 0}.cta:hover{text-decoration:none;opacity:.9}
 footer{color:var(--muted);font-size:13px;border-top:1px solid var(--line);margin-top:48px;padding:24px 0 40px}
 .crumb{font-size:14px;color:var(--muted);margin-top:16px}
+img.hero{display:block;width:100%;height:auto;border-radius:14px;margin:14px 0 4px;background:var(--chip)}
 table.src.t th{width:auto}a.chip:hover{text-decoration:none;color:var(--accent)}
 `;
 
 // 돌봄(장기요양기관) 섹션은 CARE_PUBLISH=1 일 때만 정식 발행·메뉴 노출
 const CARE_ON = process.env.CARE_PUBLISH === "1";
 
-export function layout({ title, description, canonical, body, jsonLd, sample, base = "../", source }) {
+export function layout({ title, description, canonical, body, jsonLd, sample, base = "../", source, image }) {
   const ads = CONFIG.adsenseClient
     ? `<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${esc(CONFIG.adsenseClient)}" crossorigin="anonymous"></script>`
     : "";
@@ -53,6 +54,7 @@ export function layout({ title, description, canonical, body, jsonLd, sample, ba
 <meta name="description" content="${esc(description)}">
 <link rel="canonical" href="${esc(canonical)}">
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}"><meta property="og:url" content="${esc(canonical)}"><meta property="og:type" content="website"><meta property="og:site_name" content="${esc(CONFIG.siteName)}">
+${image ? `<meta property="og:image" content="${esc(image)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">` : ""}
 ${sample ? '<meta name="robots" content="noindex">' : ""}
 ${CONFIG.googleVerification ? `<meta name="google-site-verification" content="${esc(CONFIG.googleVerification)}">` : ""}
 ${CONFIG.naverVerification ? `<meta name="naver-site-verification" content="${esc(CONFIG.naverVerification)}">` : ""}

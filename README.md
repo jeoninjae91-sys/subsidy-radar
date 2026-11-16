@@ -63,6 +63,8 @@ node src/care-build.js    # site/care 미리보기 생성
 
 - 정식 발행은 `CARE_PUBLISH=1`일 때만. GitHub Actions에서는 기본으로 켜져 있고 저장소 변수 `CARE_PUBLISH=0`으로 끕니다 (`run.js`가 수집, `build.js`가 `/care/`와 `sitemap-care.xml` 생성).
 - 상세조회는 초당 호출 제한이 빡빡해 한 줄로 300ms 간격을 둡니다(600곳 약 20분). 시설 약 1만 2천 곳을 한 바퀴 도는 데 20일쯤 걸립니다.
+- 비용 계산기(`/care/cost.html`)와 안내 글(`/care/g/`)은 `care-guides.js`가 만듭니다. **수가·월 한도액은 `care-rates.js` 한 곳에 있고 매년 1월 1일 바뀌므로, 새 고시가 나오면 연도 블록을 추가해야 합니다** (2027년분은 2026.10.30. 의결, 등급별 표 미반영).
+- 로컬 미리보기 서버: `node scripts/preview-server.mjs` → http://localhost:4173
 - 기관유형·인력·비급여 코드표는 명세에 설명이 없어 실데이터로 대조해 정했습니다(`care-common.js`, `care-build.js` 주석 참고).
 
 ## 수익화 순서

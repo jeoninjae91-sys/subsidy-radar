@@ -9,6 +9,8 @@ import path from "node:path";
 import { CONFIG, PATHS, isMain, todayKST } from "./config.js";
 import { esc } from "./items.js";
 import { layout } from "./build.js";
+import { buildCareGuides, guideLinks, scrollTables } from "./care-guides.js";
+import { currentRates, nonpaySummary } from "./care-rates.js";
 import { SIDO, isFacilityType, isListedType, loadCare, sggCode, sggFullName, sggShortName, typeName } from "./care-common.js";
 
 const SOURCE = `정보 출처: 국민건강보험공단 「장기요양기관 검색·시설별 상세조회 서비스」(공공데이터포털). 정원·현원·비용은 조회 시점 기준이며 실제와 다를 수 있습니다. 입소·이용 전 반드시 기관이나 국민건강보험공단(1577-1000)에 확인하세요. 이 사이트는 기관을 추천·알선하지 않습니다.`;
@@ -54,11 +56,28 @@ function facilityPage(r, regions, sample) {
   const f = facts(r);
   const sgg = sggCode(r.sido, r.sgg);
   const region = sggFullName(regions, r.sido, r.sgg);
-  const addr = (f.g.adminAddr || region).replace(/s+/g, " ").trim();
+  const addr = (f.g.adminAddr || region).replace(/\s+/g, " ").trim();
   const staff = STAFF.map(([k, label]) => [label, n(f.d.staff?.[k])]).filter(([, v]) => v);
   const carers = (n(f.d.staff?.recuProt_1) || 0) + (n(f.d.staff?.recuProt_2) || 0);
   const nonpay = (f.d.nonpay || []).filter((x) => n(x.nonpayTgtAmt));
   const type = typeName(r.pttn);
+  // 한 달 예상 비용: 3등급·일반·30일(시설) 또는 20일·8~10시간(주야간보호) 기준
+  const R = currentRates(todayKST());
+  const np = nonpaySummary(f.d.nonpay);
+  const isDay = !R.facility[r.pttn];
+  const per = isDay ? R.dayCare.find((d) => d.key === "8").byGrade[3] : R.facility[r.pttn].byGrade[3];
+  const days = isDay ? 20 : 30;
+  const selfPay = per * days * (isDay ? 0.15 : 0.2);
+  const estimate = /03$/.test(r.pttn) || !isDay ? selfPay + (np.meal || 0) * days : null;
+  const q = new URLSearchParams({ t: isDay ? "day" : r.pttn, ...(np.meal ? { meal: np.meal } : {}), ...(np.roomMin && !isDay ? { room: 0 } : {}), ...(np.beauty ? { beauty: np.beauty } : {}), n: r.name });
+  const costBox = estimate === null ? "" : `<h2>한 달 예상 비용</h2>
+<div class="facts">
+  <div class="fact"><b>3등급 · ${isDay ? "월 20일(하루 8~10시간)" : "30일"} 기준</b>약 ${Math.round(estimate).toLocaleString()}원</div>
+  <div class="fact"><b>급여 본인부담금 (${isDay ? "15" : "20"}%)</b>${Math.round(selfPay).toLocaleString()}원</div>
+  <div class="fact"><b>식사재료비</b>${np.meal ? `${(np.meal * days).toLocaleString()}원 (세 끼·간식 하루 ${np.meal.toLocaleString()}원)` : "신고 금액 없음"}</div>
+</div>
+<p class="lead" style="font-size:13px">${R.year}년 급여비용과 이 기관이 신고한 비급여 금액으로 계산한 추정치입니다.${np.roomMin && !isDay ? ` 상급침실을 쓰면 하루 ${np.roomMin.toLocaleString()}원${np.roomMax > np.roomMin ? `~${np.roomMax.toLocaleString()}원` : ""}이 더 듭니다.` : ""}</p>
+<p><a class="cta" href="../cost.html?${esc(q.toString())}">내 등급으로 다시 계산하기 →</a></p>`;
 
   const body = `
 <div class="crumb"><a href="../index.html">요양기관 찾기</a> › <a href="../r/${r.sido}.html">${esc(regions[String(r.sido).padEnd(10, "0")] || SIDO[r.sido] || r.sido)}</a> › <a href="../r/${sgg}.html">${esc(sggShortName(regions, r.sido, r.sgg))}</a></div>
@@ -82,6 +101,7 @@ ${/^https?:\/\//.test(f.d.etc?.hmpgAddr || "") ? `<tr><th>홈페이지</th><td><
 ${staff.length ? `<h2>일하는 사람들</h2>
 <table class="src">${staff.map(([k, v]) => `<tr><th>${esc(k)}</th><td>${v}명</td></tr>`).join("")}</table>
 ${carers && f.now ? `<p class="lead">요양보호사 1명이 어르신 약 ${(f.now / carers).toFixed(1)}명을 돌보는 셈입니다 (현재 인원 ÷ 요양보호사 수, 교대 근무는 반영하지 않은 단순 계산).</p>` : ""}` : ""}
+${costBox}
 ${nonpay.length ? `<h2>비급여 비용 (본인이 전액 내는 항목)</h2>
 <table class="src t"><tr><th>항목</th><th>기준</th><th>금액</th><th>기관 수정일</th></tr>
 ${nonpay.map((x) => `<tr><td>${esc(NONPAY[x.nonpayKind] || "기타")}</td><td>${esc(x.prodBase || "-")}</td><td>${won(x.nonpayTgtAmt)}</td><td>${esc(ymd(x.uptDt))}</td></tr>`).join("")}</table>
@@ -90,7 +110,8 @@ ${nonpay.map((x) => `<tr><td>${esc(NONPAY[x.nonpayKind] || "기타")}</td><td>${
 <ul>
 <li>빈자리와 대기 인원은 수시로 바뀝니다. 전화로 먼저 확인하세요.</li>
 <li>기관의 평가등급과 행정처분 내역은 <a href="https://www.longtermcare.or.kr" target="_blank" rel="noopener nofollow">노인장기요양보험 누리집</a>의 '장기요양기관 찾기'에서 볼 수 있습니다.</li>
-<li>시설 이용에는 장기요양등급이 필요합니다. 신청은 국민건강보험공단(1577-1000)에서 합니다.</li>
+<li>시설 이용에는 장기요양등급이 필요합니다. <a href="../g/grade-apply.html">장기요양등급 신청 방법</a>을 먼저 보세요.</li>
+<li>처음 고른다면 <a href="../g/how-to-choose.html">요양원 고르는 법</a>도 함께 보세요.</li>
 </ul>
 <p><a class="cta" href="../r/${sgg}.html">${esc(sggShortName(regions, r.sido, r.sgg))}의 다른 기관 보기 →</a></p>
 <p class="lead" style="font-size:13px">확인일 ${esc(f.d.checkedAt || todayKST())}</p>`;
@@ -98,7 +119,7 @@ ${nonpay.map((x) => `<tr><td>${esc(NONPAY[x.nonpayKind] || "기타")}</td><td>${
   return layout({
     title: `${r.name} - ${sggShortName(regions, r.sido, r.sgg)} ${type} 정원·빈자리·비용 | ${CONFIG.siteName}`,
     description: `${region} ${r.name}의 정원 ${f.cap ?? "-"}명, 현재 인원 ${f.now ?? "-"}명, 인력 현황과 비급여 비용을 국민건강보험공단 공개 자료로 정리했습니다.`,
-    canonical: `${CONFIG.siteUrl}/care/f/${r.id}.html`, body, sample, base: "../../", source: SOURCE,
+    canonical: `${CONFIG.siteUrl}/care/f/${r.id}.html`, body: scrollTables(body), sample, base: "../../", source: SOURCE,
   });
 }
 
@@ -151,6 +172,9 @@ function carePage(tree, regions, total, sample) {
 <li><b>이용할 급여 정하기</b> — 집에서 받는 재가급여(방문요양·주야간보호 등)와 시설에 들어가는 시설급여(요양원·공동생활가정)가 있습니다.</li>
 <li><b>기관 비교</b> — 이 페이지에서 지역을 골라 빈자리, 인력, 비급여 비용을 비교하고 직접 방문해 확인하세요.</li>
 </ol>
+<p><a class="cta" href="cost.html">요양원 한 달 비용 계산하기 →</a></p>
+<h2>알아 두면 좋은 것</h2>
+<ul>${guideLinks().map((g) => `<li><a href="g/${g.slug}.html">${esc(g.title)}</a></li>`).join("")}</ul>
 <p><a href="../c/senior.html">노인 대상 정부·지자체 지원금도 함께 보기 →</a></p>`;
   return layout({
     title: `우리 동네 요양원·주간보호센터 찾기 - 정원·빈자리·비용 | ${CONFIG.siteName}`,
@@ -165,7 +189,7 @@ export function buildCare({ preview = false } = {}) {
   if (sample && !preview) return { urls: [], facilities: 0, sample };
 
   const dir = path.join(PATHS.site, "care");
-  fs.rmSync(dir, { recursive: true, force: true });
+  fs.rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 }); // Windows·OneDrive 잠금 대비
   const write = (rel, html) => {
     const file = path.join(dir, rel);
     fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -186,6 +210,7 @@ export function buildCare({ preview = false } = {}) {
       urls.push(`${CONFIG.siteUrl}/care/r/${sgg}.html`);
     }
   }
+  urls.push(...buildCareGuides(write, { live, sample }).urls);
   let facilities = 0;
   for (const r of live) {
     if (!r.detail || !isFacilityType(r.pttn)) continue;

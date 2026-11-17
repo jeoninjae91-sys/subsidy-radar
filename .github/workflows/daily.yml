@@ -47,6 +47,7 @@ jobs:
           NAVER_SITE_VERIFICATION: ${{ vars.NAVER_SITE_VERIFICATION }}
           CARE_PUBLISH: ${{ vars.CARE_PUBLISH || '1' }} # 장기요양기관(/care/) 수집·발행. 끄려면 저장소 변수 CARE_PUBLISH=0
           CARE_DETAIL_LIMIT: ${{ vars.CARE_DETAIL_LIMIT || '600' }}
+          PRICE_PUBLISH: ${{ vars.PRICE_PUBLISH || '1' }} # 예방접종 가격(/price/) 수집·발행 (병원급 이상, 주 1회 갱신). 끄려면 저장소 변수 PRICE_PUBLISH=0
         run: node src/run.js
 
       - name: 데이터 변경분 커밋 (다음 실행 때 요약을 다시 하지 않도록)

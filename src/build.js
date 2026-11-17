@@ -7,6 +7,7 @@ let GUIDES = {}; // 분야별 가이드 (buildSite에서 로드)
 let ARTICLES = {}; // 사업별 신청 가이드 글 (buildSite에서 로드)
 import { closingSoon, ddayLabel, esc, loadItems, recent } from "./items.js";
 import { buildCare } from "./care-build.js";
+import { buildPrice } from "./price-build.js";
 
 const CSS = `
 :root{--bg:#f7f8fa;--card:#fff;--text:#1a1d23;--muted:#5d6472;--line:#e3e6eb;--accent:#1f6feb;--hot:#d1242f;--ok:#1a7f37;--chip:#eef2f8}
@@ -42,6 +43,8 @@ table.src.t th{width:auto}a.chip:hover{text-decoration:none;color:var(--accent)}
 
 // 돌봄(장기요양기관) 섹션은 CARE_PUBLISH=1 일 때만 정식 발행·메뉴 노출
 const CARE_ON = process.env.CARE_PUBLISH === "1";
+// 예방접종 가격(비급여 진료비) 섹션은 PRICE_PUBLISH=1 일 때만 정식 발행·링크 노출
+const PRICE_ON = process.env.PRICE_PUBLISH === "1";
 
 export function layout({ title, description, canonical, body, jsonLd, sample, base = "../", source, image }) {
   const ads = CONFIG.adsenseClient
@@ -67,7 +70,7 @@ ${sample ? '<div class="notice">⚠️ 샘플 데이터로 만든 미리보기�
 <main class="wrap">${body}</main>
 <footer><div class="wrap">
 ${source || "정보 출처: 행정안전부 「대한민국 공공서비스(혜택) 정보」(공공데이터포털) · 요약은 AI가 작성했으며 실제 내용과 다를 수 있습니다. 신청 전 반드시 원문(정부24)을 확인하세요."}<br>
-<a href="${base}about.html">소개</a> · <a href="${base}privacy.html">개인정보처리방침</a> · <a href="${base}contact.html">문의</a><br>
+${PRICE_ON ? `<a href="${base}price/index.html">예방접종 가격</a> · ` : ""}<a href="${base}about.html">소개</a> ·<a href="${base}privacy.html">개인정보처리방침</a> · <a href="${base}contact.html">문의</a><br>
 마지막 업데이트 ${todayKST()} · © ${esc(CONFIG.siteName)}
 </div></footer>
 </body></html>`;
@@ -286,8 +289,15 @@ export function buildSite() {
     careMaps.push(name);
   }
 
+  // 예방접종 가격 섹션: 실데이터가 있고 PRICE_PUBLISH=1 일 때만 발행. 검색 노출을 따로 보려고 사이트맵을 나눈다.
+  const price = PRICE_ON && !sample ? buildPrice() : { urls: [] };
+  if (price.urls.length) {
+    write("sitemap-price.xml", sitemap(price.urls));
+    careMaps.push("sitemap-price.xml");
+  }
+
   write("robots.txt", sample ? "User-agent: *\nDisallow: /\n" : `User-agent: *\nAllow: /\nSitemap: ${CONFIG.siteUrl}/sitemap.xml\n${careMaps.map((m) => `Sitemap: ${CONFIG.siteUrl}/${m}\n`).join("")}`);
-  return { pages: urls.length + care.urls.length, items: items.length, sample, carePages: care.urls.length };
+  return { pages: urls.length + care.urls.length + price.urls.length, items: items.length, sample, carePages: care.urls.length, pricePages: price.urls.length };
 }
 
 if (isMain(import.meta.url)) {

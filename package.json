@@ -11,7 +11,9 @@
     "newsletter": "node src/newsletter.js",
     "all": "node src/run.js",
     "care:fetch": "node src/care-fetch.js",
-    "care:build": "node src/care-build.js"
+    "care:build": "node src/care-build.js",
+    "price:fetch": "node src/price-fetch.js",
+    "price:build": "node src/price-build.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0"

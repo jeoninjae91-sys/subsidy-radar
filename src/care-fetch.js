@@ -51,7 +51,7 @@ export function parseXml(xml) {
 let gate = Promise.resolve();
 const throttle = () => (gate = gate.then(() => new Promise((r) => setTimeout(r, MIN_GAP_MS))));
 
-async function get(base, params) {
+export async function get(base, params) {
   const url = new URL(base);
   url.searchParams.set("serviceKey", CONFIG.dataKey);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, String(v));

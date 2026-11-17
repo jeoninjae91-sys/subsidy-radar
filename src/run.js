@@ -36,6 +36,18 @@ if (process.env.CARE_PUBLISH === "1") {
   }
 }
 
+// 예방접종 가격(비급여 진료비) 수집 — 주 1회만 다시 받고, 실패해도 발행은 계속한다
+if (process.env.PRICE_PUBLISH === "1") {
+  try {
+    const { fetchPrice } = await import("./price-fetch.js");
+    const p = await fetchPrice();
+    if (p.fresh) console.log(`②-3 가격: ${p.fetchedAt} 수집분 사용`);
+    else if (!p.skipped) console.log(`②-3 가격: ${Object.values(p.items).map((o) => `의료기관 ${o.hospitals}곳 · 가격 ${o.rows}건`).join(", ")}`);
+  } catch (err) {
+    console.log(`②-3 가격 수집 실패 (기존 데이터로 계속): ${err.message}`);
+  }
+}
+
 const b = buildSite();
 console.log(`③ 사이트: 페이지 ${b.pages}개 생성`);
 

@@ -70,7 +70,7 @@ ${sample ? '<div class="notice">⚠️ 샘플 데이터로 만든 미리보기�
 <main class="wrap">${body}</main>
 <footer><div class="wrap">
 ${source || "정보 출처: 행정안전부 「대한민국 공공서비스(혜택) 정보」(공공데이터포털) · 요약은 AI가 작성했으며 실제 내용과 다를 수 있습니다. 신청 전 반드시 원문(정부24)을 확인하세요."}<br>
-${PRICE_ON ? `<a href="${base}price/index.html">예방접종 가격</a> · ` : ""}<a href="${base}about.html">소개</a> ·<a href="${base}privacy.html">개인정보처리방침</a> · <a href="${base}contact.html">문의</a><br>
+${PRICE_ON ? `<a href="${base}price/index.html">병원 비급여 가격</a> · ` : ""}<a href="${base}about.html">소개</a> ·<a href="${base}privacy.html">개인정보처리방침</a> · <a href="${base}contact.html">문의</a><br>
 마지막 업데이트 ${todayKST()} · © ${esc(CONFIG.siteName)}
 </div></footer>
 </body></html>`;

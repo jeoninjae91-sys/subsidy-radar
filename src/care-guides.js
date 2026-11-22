@@ -4,6 +4,7 @@ import { CONFIG, todayKST } from "./config.js";
 import { esc } from "./items.js";
 import { layout } from "./build.js";
 import { GRADE_LABEL, currentRates, nonpaySummary } from "./care-rates.js";
+import { BENEFIT_GUIDES } from "./care-guides-benefits.js";
 
 const won = (v) => `${Math.round(v).toLocaleString("ko-KR")}원`;
 // 열이 많은 표는 좁은 화면에서 옆으로 밀 수 있게 감싼다
@@ -332,6 +333,7 @@ ${["normal", "cut40", "cut60", "free"].map(row).join("")}</table>
 <p><a class="cta" href="../cost.html">감경을 넣어 한 달 비용 계산하기 →</a></p>`;
     },
   },
+  ...BENEFIT_GUIDES, // 부모님 혜택 안내 (care-guides-benefits.js)
 ];
 
 function guidePage(g, R, stats, sample) {

@@ -8,6 +8,7 @@ let ARTICLES = {}; // 사업별 신청 가이드 글 (buildSite에서 로드)
 import { closingSoon, ddayLabel, esc, loadItems, recent } from "./items.js";
 import { buildCare } from "./care-build.js";
 import { buildPrice } from "./price-build.js";
+import { buildParents } from "./parents-build.js";
 
 const CSS = `
 :root{--bg:#f7f8fa;--card:#fff;--text:#1a1d23;--muted:#5d6472;--line:#e3e6eb;--accent:#1f6feb;--hot:#d1242f;--ok:#1a7f37;--chip:#eef2f8}
@@ -66,7 +67,7 @@ ${ads}
 <style>${CSS}</style>
 </head><body>
 ${sample ? '<div class="notice">⚠️ 샘플 데이터로 만든 미리보기입니다. 실제 지원사업 정보가 아닙니다.</div>' : ""}
-<header class="top"><div class="wrap"><a class="logo" href="${base}index.html">지원금 <span>레이더</span></a><span>${CARE_ON ? `<a href="${base}care/index.html">요양기관 찾기</a> · ` : ""}${Object.keys(ARTICLES).length ? `<a href="${base}a/index.html">신청 가이드</a> · ` : ""}<a href="${base}index.html#closing">마감 임박</a></span></div></header>
+<header class="top"><div class="wrap"><a class="logo" href="${base}index.html">지원금 <span>레이더</span></a><span><a href="${base}parents/">부모님 혜택</a> · ${CARE_ON ? `<a href="${base}care/index.html">요양기관 찾기</a> · ` : ""}${Object.keys(ARTICLES).length ? `<a href="${base}a/index.html">신청 가이드</a> · ` : ""}<a href="${base}index.html#closing">마감 임박</a></span></div></header>
 <main class="wrap">${body}</main>
 <footer><div class="wrap">
 ${source || "정보 출처: 행정안전부 「대한민국 공공서비스(혜택) 정보」(공공데이터포털) · 요약은 AI가 작성했으며 실제 내용과 다를 수 있습니다. 신청 전 반드시 원문(정부24)을 확인하세요."}<br>
@@ -216,7 +217,12 @@ function infoPages(count) {
     page("privacy", "개인정보처리방침", "지원금 레이더의 개인정보처리방침입니다.", `
 <p>지원금 레이더(이하 "사이트")는 이용자의 개인정보를 중요하게 생각하며, 관련 법령을 준수합니다.</p>
 <h2>1. 수집하는 개인정보</h2>
-<p>사이트는 회원가입이 없으며, 이용자가 직접 입력하는 개인정보를 수집하지 않습니다.</p>
+<p>사이트는 회원가입이 없습니다. 이용자가 <a href="parents/">부모님 혜택 알림</a>을 신청할 때에만 아래 정보를 받습니다.</p>
+<table class="src"><tr><th>항목</th><td>이메일 주소, 부모님 출생연도, 부모님 거주 지역(시·도, 시·군·구), 신청 경로</td></tr>
+<tr><th>목적</th><td>부모님 연세·지역에 맞는 새 혜택, 신청 마감, 나이 기준 도래 알림 발송</td></tr>
+<tr><th>보관 기간</th><td>알림 해지 시까지. 해지하면 즉시 삭제합니다. 알림 메일마다 해지 링크가 들어갑니다.</td></tr>
+<tr><th>처리 위탁</th><td>Cloudflare, Inc. (신청 정보 저장 서버 운영)</td></tr></table>
+<p>이름·전화번호·주민등록번호는 받지 않으며, 신청 정보를 제3자에게 제공하거나 판매하지 않습니다. 동의하지 않으면 알림을 받을 수 없을 뿐, 혜택 찾기는 그대로 이용할 수 있습니다.</p>
 <h2>2. 쿠키 및 광고</h2>
 <p>사이트는 Google AdSense 등 제3자 광고 서비스를 사용할 수 있습니다. Google을 포함한 제3자 공급업체는 쿠키를 사용하여 이용자의 이 사이트 및 다른 사이트 방문 기록을 바탕으로 광고를 게재합니다. Google은 광고 쿠키를 사용하여 이용자에게 맞춤 광고를 제공할 수 있습니다.</p>
 <p>이용자는 <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener">Google 광고 설정</a>에서 맞춤 광고를 사용 중지할 수 있으며, <a href="https://www.aboutads.info" target="_blank" rel="noopener">www.aboutads.info</a>에서 제3자 공급업체의 맞춤 광고 쿠키를 사용 중지할 수 있습니다. 브라우저 설정으로 쿠키 저장을 거부할 수도 있습니다.</p>
@@ -268,8 +274,12 @@ export function buildSite() {
   if (CONFIG.adsenseClient) write("ads.txt", `google.com, ${CONFIG.adsenseClient.replace(/^ca-/, "")}, DIRECT, f08c47fec0942fa0\n`);
   if (CONFIG.customDomain) write("CNAME", `${CONFIG.customDomain}\n`);
 
+  // 부모님 혜택 찾기 + 알림 신청 (/parents/)
+  const parents = sample ? { urls: [] } : buildParents(write, items, { sample });
+
   const urls = [
     `${CONFIG.siteUrl}/`,
+    ...parents.urls,
     ...info.map(([slug]) => `${CONFIG.siteUrl}/${slug}.html`),
     ...Object.keys(guides).map((slug) => `${CONFIG.siteUrl}/g/${slug}.html`),
     ...(articleList.length ? [`${CONFIG.siteUrl}/a/index.html`] : []),

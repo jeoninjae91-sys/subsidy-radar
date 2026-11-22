@@ -1,0 +1,8 @@
+{
+  "name": "parents-alert",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-11-01",
+  "d1_databases": [
+    { "binding": "DB", "database_name": "linkstats", "database_id": "173e0fa0-6616-4a78-af6b-da8105017207" }
+  ]
+}

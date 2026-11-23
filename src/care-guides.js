@@ -354,7 +354,7 @@ ${g.body(R, stats)}
   });
 }
 
-export const guideLinks = () => GUIDES.map((g) => ({ slug: g.slug, title: g.title }));
+export const guideLinks = () => GUIDES.map((g) => ({ slug: g.slug, title: g.title, description: g.description }));
 
 // write(rel, html) 로 페이지를 쓰고, 만든 URL 목록을 돌려준다
 export function buildCareGuides(write, { live, sample }) {

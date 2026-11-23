@@ -7,6 +7,7 @@ let GUIDES = {}; // 분야별 가이드 (buildSite에서 로드)
 let ARTICLES = {}; // 사업별 신청 가이드 글 (buildSite에서 로드)
 import { closingSoon, ddayLabel, esc, loadItems, recent } from "./items.js";
 import { buildCare } from "./care-build.js";
+import { guideLinks } from "./care-guides.js";
 import { buildPrice } from "./price-build.js";
 import { buildParents } from "./parents-build.js";
 
@@ -47,7 +48,12 @@ const CARE_ON = process.env.CARE_PUBLISH === "1";
 // 예방접종 가격(비급여 진료비) 섹션은 PRICE_PUBLISH=1 일 때만 정식 발행·링크 노출
 const PRICE_ON = process.env.PRICE_PUBLISH === "1";
 
-export function layout({ title, description, canonical, body, jsonLd, sample, base = "../", source, image }) {
+// 지원사업 상세(/s/) 약 1만 쪽은 공공데이터를 AI가 요약한 대량 생성 페이지다. 2026-11-24 애드센스가
+// "가치가 별로 없는 콘텐츠"로 반려해, 기본값은 검색엔진 색인에서 빼고(noindex,follow) 사이트맵에도 넣지 않는다.
+// 페이지 자체는 그대로 만들어 방문자가 볼 수 있다. 다시 색인시키려면 INDEX_BULK=1.
+const INDEX_BULK = process.env.INDEX_BULK === "1";
+
+export function layout({ title, description, canonical, body, jsonLd, sample, base = "../", source, image, noindex }) {
   const ads = CONFIG.adsenseClient
     ? `<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${esc(CONFIG.adsenseClient)}" crossorigin="anonymous"></script>`
     : "";
@@ -59,7 +65,7 @@ export function layout({ title, description, canonical, body, jsonLd, sample, ba
 <link rel="canonical" href="${esc(canonical)}">
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}"><meta property="og:url" content="${esc(canonical)}"><meta property="og:type" content="website"><meta property="og:site_name" content="${esc(CONFIG.siteName)}">
 ${image ? `<meta property="og:image" content="${esc(image)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">` : ""}
-${sample ? '<meta name="robots" content="noindex">' : ""}
+${sample ? '<meta name="robots" content="noindex">' : noindex ? '<meta name="robots" content="noindex,follow">' : ""}
 ${CONFIG.googleVerification ? `<meta name="google-site-verification" content="${esc(CONFIG.googleVerification)}">` : ""}
 ${CONFIG.naverVerification ? `<meta name="naver-site-verification" content="${esc(CONFIG.naverVerification)}">` : ""}
 ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>` : ""}
@@ -114,7 +120,7 @@ ${i.faq?.length ? `<h2>자주 묻는 질문</h2>${i.faq.map((f) => `<details><su
   const jsonLd = i.faq?.length
     ? { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: i.faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) }
     : null;
-  return layout({ title: i.seo_title || i.name, description: i.seo_description || i.summary, canonical: url, body, jsonLd, sample: i.sample });
+  return layout({ title: i.seo_title || i.name, description: i.seo_description || i.summary, canonical: url, body, jsonLd, sample: i.sample, noindex: !INDEX_BULK });
 }
 
 function categoryPage(slug, list, sample) {
@@ -128,23 +134,38 @@ ${GUIDES[slug] ? `<p><a href="../g/${slug}.html">📘 ${esc(GUIDES[slug].title)}
   return layout({ title: `${name} 지원금 총정리 | ${CONFIG.siteName}`, description: `${name} 분야 정부·지자체 지원금 ${open.length}건을 마감일 순으로 정리했습니다.`, canonical: `${CONFIG.siteUrl}/c/${slug}.html`, body, sample });
 }
 
+// 첫 화면: 직접 만든 도구와 안내 글을 먼저 보여 주고, 공공데이터 목록은 그 아래에 짧게 둔다.
 function indexPage(items, byCat, sample) {
-  const soon = closingSoon(items, 14).slice(0, 20);
-  const fresh = recent(items, 14).slice(0, 20);
-  const popular = [...items].filter((i) => !(i.dday !== null && i.dday < 0)).sort((a, b) => b.views - a.views).slice(0, 10);
+  const soon = closingSoon(items, 14).slice(0, 8);
+  const popular = [...items].filter((i) => !(i.dday !== null && i.dday < 0)).sort((a, b) => b.views - a.views).slice(0, 5);
+  const card = (href, title, text) => `<li><a href="${href}"><b>${esc(title)}</b><br><small>${esc(text)}</small></a></li>`;
+  const row = (href, title, sum) => `<li class="item"><div class="body"><a class="title" href="${href}">${esc(title)}</a>${sum ? `<div class="sum">${esc(sum)}</div>` : ""}</div></li>`;
+  const careGuides = CARE_ON && !sample ? guideLinks() : [];
+  const articles = Object.entries(ARTICLES).sort((a, b) => b[1].published.localeCompare(a[1].published)).slice(0, 6);
   const body = `
-<h1>놓치면 아까운 지원금,<br>마감 전에 알려드려요</h1>
-<p class="lead">정부·지자체 지원사업 ${items.length.toLocaleString()}건을 매일 업데이트하고 쉬운 말로 정리합니다.</p>
-<h2 id="closing">⏰ 마감 임박 (2주 이내)</h2>
+<style>.tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;padding:0;margin:0;list-style:none}
+.tools a{display:block;height:100%;background:var(--card);border:2px solid var(--accent);border-radius:14px;padding:16px;color:var(--text)}
+.tools a:hover{text-decoration:none;opacity:.9}.tools b{font-size:18px}.tools small{color:var(--muted);font-size:14px}</style>
+<h1>부모님과 우리 가족이 받을 수 있는 지원,<br>쉽게 찾아 드려요</h1>
+<p class="lead">나이와 사는 곳만 넣으면 받을 수 있는 혜택을 찾아 주고, 요양 비용을 미리 계산해 볼 수 있습니다. 신청 방법은 직접 정리한 안내 글로 설명합니다.</p>
+${sample ? "" : `<h2>먼저 해 보세요</h2>
+<ul class="tools">
+${card("parents/", "부모님 혜택 찾기", "부모님 출생연도와 사는 곳을 넣으면 지금 받을 수 있는 혜택과 앞으로 받게 될 혜택을 보여 드립니다.")}
+${CARE_ON ? card("care/cost.html", "요양원·주간보호 비용 계산기", "장기요양등급과 시설 종류를 고르면 한 달에 실제로 내는 돈을 계산합니다.") : ""}
+${CARE_ON ? card("care/index.html", "우리 동네 요양기관 찾기", "시·군·구별 요양원, 주야간보호센터, 방문요양 기관을 정원·비급여 비용과 함께 봅니다.") : ""}
+</ul>`}
+${careGuides.length ? `<h2>📘 부모님 돌봄·혜택 안내</h2>
+<p class="lead">신청 순서와 금액, 놓치기 쉬운 점을 한 편씩 정리했습니다.</p>
+<ul class="list">${careGuides.map((g) => row(`care/g/${g.slug}.html`, g.title, g.description)).join("")}</ul>` : ""}
+${articles.length ? `<h2>📝 지원금 신청 가이드</h2><ul class="list">${articles.map(([id, a]) => row(`a/${encodeURIComponent(id)}.html`, a.title, a.description)).join("")}</ul><p><a href="a/index.html">신청 가이드 전체 보기 →</a></p>` : ""}
+${Object.keys(GUIDES).length ? `<h2>📚 분야별 지원금 총정리</h2><ul class="list">${Object.entries(GUIDES).map(([s, g]) => row(`g/${s}.html`, g.title, g.description)).join("")}</ul>` : ""}
+<h2 id="closing">⏰ 마감이 가까운 지원금</h2>
 ${soon.length ? `<ul class="list">${soon.map((i) => itemRow(i)).join("")}</ul>` : '<p class="lead">2주 안에 마감되는 사업이 없습니다.</p>'}
-<h2>🆕 새로 올라온 지원금</h2>
-${fresh.length ? `<ul class="list">${fresh.map((i) => itemRow(i)).join("")}</ul>` : '<p class="lead">최근 2주간 새 사업이 없습니다.</p>'}
 <h2>🔥 많이 찾는 지원금</h2><ul class="list">${popular.map((i) => itemRow(i)).join("")}</ul>
-${Object.keys(ARTICLES).length ? `<h2>📝 새 신청 가이드</h2><ul class="list">${Object.entries(ARTICLES).sort((a, b) => b[1].published.localeCompare(a[1].published)).slice(0, 6).map(([id, a]) => `<li class="item"><div class="body"><a class="title" href="a/${encodeURIComponent(id)}.html">${esc(a.title)}</a><div class="sum">${esc(a.description)}</div></div></li>`).join("")}</ul><p><a href="a/index.html">신청 가이드 전체 보기 →</a></p>` : ""}
-${Object.keys(GUIDES).length ? `<h2>📘 분야별 지원금 가이드</h2><ul class="list">${Object.entries(GUIDES).map(([s, g]) => `<li class="item"><div class="body"><a class="title" href="g/${s}.html">${esc(g.title)}</a><div class="sum">${esc(g.description)}</div></div></li>`).join("")}</ul>` : ""}
-<h2>분야별로 보기</h2>
+<h2>분야별로 찾아보기</h2>
+<p class="lead">행정안전부 공공서비스 목록의 지원사업을 분야별로 모았습니다. 매일 새로 가져옵니다.</p>
 <ul class="cats">${Object.entries(CATEGORIES).filter(([s]) => byCat[s]?.length).map(([s, n]) => `<li><a href="c/${s}.html">${esc(n)}<br><small>${byCat[s].length}건</small></a></li>`).join("")}</ul>`;
-  return layout({ title: `${CONFIG.siteName} - 마감 임박 정부지원금·혜택 한눈에`, description: "청년·출산·소상공인·노인 등 정부와 지자체 지원금을 매일 모아 쉬운 말로 정리하고 마감일을 알려드립니다.", canonical: `${CONFIG.siteUrl}/`, body, sample, base: "" });
+  return layout({ title: `${CONFIG.siteName} - 부모님 혜택 찾기·요양 비용 계산·지원금 신청 안내`, description: "부모님 나이와 사는 곳으로 받을 수 있는 혜택을 찾고, 요양원·주간보호 비용을 계산해 보세요. 장수축하금·기초연금·장기요양 신청 방법을 쉽게 정리했습니다.", canonical: `${CONFIG.siteUrl}/`, body, sample, base: "" });
 }
 
 // 분야별 가이드 글 (/g/<분야>.html)
@@ -204,7 +225,14 @@ function infoPages(count) {
   return [
     page("about", "지원금 레이더 소개", "지원금 레이더는 정부·지자체 지원사업을 매일 모아 쉬운 말로 정리하는 정보 사이트입니다.", `
 <p>지원금 레이더는 "받을 수 있는데 몰라서 못 받는 지원금"을 줄이기 위해 만든 정보 사이트입니다.</p>
-<h2>무엇을 하나요</h2>
+<h2>직접 만든 것</h2>
+<ul>
+<li><a href="parents/">부모님 혜택 찾기</a> — 부모님 출생연도와 사는 곳을 넣으면 지금 받을 수 있는 노인 혜택과 몇 년 안에 받게 될 혜택을 골라 보여 줍니다.</li>
+<li><a href="care/cost.html">요양원·주간보호 비용 계산기</a> — 보건복지부 장기요양 급여비용 고시의 등급별 금액으로 한 달 본인부담금을 계산합니다.</li>
+<li><a href="care/index.html">요양기관 찾기</a> — 국민건강보험공단 공개 자료로 시·군·구별 기관의 정원과 비급여 비용을 정리했습니다.</li>
+<li>안내 글 — 장기요양등급 신청, 본인부담금 감경, 장수축하금·효도수당처럼 가족이 실제로 부딪히는 주제를 한 편씩 직접 써서 정리합니다. 금액은 출처와 확인한 날짜를 함께 적습니다.</li>
+</ul>
+<h2>지원사업 목록은 이렇게 만듭니다</h2>
 <ul>
 <li>행정안전부가 공개하는 「대한민국 공공서비스(혜택) 정보」에서 정부·지자체·공공기관 지원사업 약 ${count.toLocaleString()}건을 <b>매일</b> 가져옵니다.</li>
 <li>사업마다 <b>누가 · 얼마 · 언제까지 · 어떻게</b> 신청하는지 쉬운 말로 정리하고, 마감이 가까운 순서로 보여 드립니다.</li>
@@ -285,7 +313,7 @@ export function buildSite() {
     ...(articleList.length ? [`${CONFIG.siteUrl}/a/index.html`] : []),
     ...articleList.map(([id]) => `${CONFIG.siteUrl}/a/${encodeURIComponent(id)}.html`),
     ...Object.keys(byCat).map((s) => `${CONFIG.siteUrl}/c/${s}.html`),
-    ...items.map((i) => `${CONFIG.siteUrl}/s/${i.slug}.html`),
+    ...(INDEX_BULK ? items.map((i) => `${CONFIG.siteUrl}/s/${i.slug}.html`) : []),
   ];
   const sitemap = (list) => `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${list.map((u) => `<url><loc>${esc(u)}</loc><lastmod>${todayKST()}</lastmod></url>`).join("\n")}\n</urlset>\n`;
   write("sitemap.xml", sitemap(urls));

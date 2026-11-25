@@ -25,6 +25,7 @@ export const CONFIG = {
   model: process.env.CLAUDE_MODEL || "claude-opus-5-5",
   concurrency: Number(process.env.ENRICH_CONCURRENCY || 4),
   enrichLimit: Number(process.env.ENRICH_LIMIT || 0), // 0 = 제한 없음 (한 번에 처리할 최대 건수)
+  gaMeasurementId: process.env.GA_MEASUREMENT_ID || "G-FMRQEBW6CL", // GA4 웹 스트림 측정 ID (빈 값 "-"이면 미삽입)
   adsenseClient: process.env.ADSENSE_CLIENT || "", // ca-pub-XXXX (비우면 광고 코드 미삽입)
   customDomain: process.env.CUSTOM_DOMAIN || "", // 예: jiwongeum.kr (구매 후 설정)
   contactUrl: process.env.CONTACT_URL || "https://github.com/jeoninjae91-sys/subsidy-radar/issues/new",

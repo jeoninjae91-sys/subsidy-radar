@@ -57,6 +57,10 @@ export function layout({ title, description, canonical, body, jsonLd, sample, ba
   const ads = CONFIG.adsenseClient
     ? `<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${esc(CONFIG.adsenseClient)}" crossorigin="anonymous"></script>`
     : "";
+  const gaId = CONFIG.gaMeasurementId && CONFIG.gaMeasurementId !== "-" ? CONFIG.gaMeasurementId : "";
+  const ga = gaId
+    ? `<script async src="https://www.googletagmanager.com/gtag/js?id=${esc(gaId)}"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","${esc(gaId)}");</script>`
+    : "";
   return `<!doctype html>
 <html lang="ko"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -69,6 +73,7 @@ ${sample ? '<meta name="robots" content="noindex">' : noindex ? '<meta name="rob
 ${CONFIG.googleVerification ? `<meta name="google-site-verification" content="${esc(CONFIG.googleVerification)}">` : ""}
 ${CONFIG.naverVerification ? `<meta name="naver-site-verification" content="${esc(CONFIG.naverVerification)}">` : ""}
 ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>` : ""}
+${ga}
 ${ads}
 <style>${CSS}</style>
 </head><body>
@@ -251,7 +256,8 @@ function infoPages(count) {
 <tr><th>보관 기간</th><td>알림 해지 시까지. 해지하면 즉시 삭제합니다. 알림 메일마다 해지 링크가 들어갑니다.</td></tr>
 <tr><th>처리 위탁</th><td>Cloudflare, Inc. (신청 정보 저장 서버 운영)</td></tr></table>
 <p>이름·전화번호·주민등록번호는 받지 않으며, 신청 정보를 제3자에게 제공하거나 판매하지 않습니다. 동의하지 않으면 알림을 받을 수 없을 뿐, 혜택 찾기는 그대로 이용할 수 있습니다.</p>
-<h2>2. 쿠키 및 광고</h2>
+<h2>2. 쿠키, 방문 분석 및 광고</h2>
+<p>사이트는 이용 현황을 통계로 파악하기 위해 Google 애널리틱스를 사용합니다. Google 애널리틱스는 쿠키를 통해 방문한 페이지, 머문 시간, 브라우저·기기 종류, 대략적인 지역, 유입 경로 같은 정보를 수집하며, 사이트는 이를 개인을 알아볼 수 없는 통계로만 봅니다. 이 정보는 Google LLC(미국)가 처리하고 Google 애널리틱스의 보관 기간 설정에 따라 삭제됩니다. 이용자는 브라우저의 쿠키 설정이나 <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google 애널리틱스 차단 브라우저 부가기능</a>으로 수집을 거부할 수 있습니다.</p>
 <p>사이트는 Google AdSense 등 제3자 광고 서비스를 사용할 수 있습니다. Google을 포함한 제3자 공급업체는 쿠키를 사용하여 이용자의 이 사이트 및 다른 사이트 방문 기록을 바탕으로 광고를 게재합니다. Google은 광고 쿠키를 사용하여 이용자에게 맞춤 광고를 제공할 수 있습니다.</p>
 <p>이용자는 <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener">Google 광고 설정</a>에서 맞춤 광고를 사용 중지할 수 있으며, <a href="https://www.aboutads.info" target="_blank" rel="noopener">www.aboutads.info</a>에서 제3자 공급업체의 맞춤 광고 쿠키를 사용 중지할 수 있습니다. 브라우저 설정으로 쿠키 저장을 거부할 수도 있습니다.</p>
 <h2>3. 접속 기록</h2>

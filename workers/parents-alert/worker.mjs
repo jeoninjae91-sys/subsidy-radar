@@ -57,6 +57,24 @@ export default {
       return json(req, { ok: true });
     }
 
+    // 사이트 문의 (contact.html) — 내용과, 답장을 원할 때만 이메일을 저장한다. 운영자 연락처는 노출하지 않는다.
+    if (url.pathname === "/contact" && req.method === "POST") {
+      let b;
+      try { b = await req.json(); } catch { return json(req, { ok: false, error: "형식이 올바르지 않아요." }, 400); }
+      if (b.website) return json(req, { ok: true }); // 로봇이 채우는 숨은 칸
+      const kind = ["오류 제보", "제휴", "기타"].includes(b.kind) ? b.kind : "기타";
+      const message = String(b.message || "").trim().slice(0, 2000);
+      const email = String(b.email || "").trim().toLowerCase().slice(0, 254);
+      const page = String(b.page || "").slice(0, 200);
+      if (message.length < 5) return json(req, { ok: false, error: "내용을 5자 이상 적어 주세요." }, 400);
+      if (email && !/^[^\s@]{1,64}@[^\s@]{1,190}\.[a-z]{2,}$/.test(email)) return json(req, { ok: false, error: "답장 받을 이메일 주소를 확인해 주세요." }, 400);
+      const today = (await env.DB.prepare("SELECT COUNT(*) n FROM radar_msgs WHERE created_at >= ?").bind(dayKST()).first()).n;
+      if (today >= 100) return json(req, { ok: false, error: "오늘은 문의가 많아요. 내일 다시 보내 주세요." }, 429);
+      await env.DB.prepare("INSERT INTO radar_msgs(created_at,kind,message,email,page) VALUES(?,?,?,?,?)")
+        .bind(new Date(Date.now() + 9 * 3600e3).toISOString().replace("T", " ").slice(0, 16), kind, message, email || null, page).run();
+      return json(req, { ok: true });
+    }
+
     if (url.pathname === "/unsubscribe") {
       const t = url.searchParams.get("t") || "";
       let n = 0;

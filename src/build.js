@@ -256,6 +256,7 @@ function infoPages(count) {
 <tr><th>보관 기간</th><td>알림 해지 시까지. 해지하면 즉시 삭제합니다. 알림 메일마다 해지 링크가 들어갑니다.</td></tr>
 <tr><th>처리 위탁</th><td>Cloudflare, Inc. (신청 정보 저장 서버 운영)</td></tr></table>
 <p>이름·전화번호·주민등록번호는 받지 않으며, 신청 정보를 제3자에게 제공하거나 판매하지 않습니다. 동의하지 않으면 알림을 받을 수 없을 뿐, 혜택 찾기는 그대로 이용할 수 있습니다.</p>
+<p><a href="contact.html">문의</a> 양식으로 보낸 내용과, 답장을 원해 적은 이메일 주소는 문의에 답하고 사이트를 고치는 데에만 쓰고, 처리한 뒤 1년 안에 지웁니다. 이 정보는 Cloudflare, Inc.의 서버에 저장됩니다.</p>
 <h2>2. 쿠키, 방문 분석 및 광고</h2>
 <p>사이트는 이용 현황을 통계로 파악하기 위해 Google 애널리틱스를 사용합니다. Google 애널리틱스는 쿠키를 통해 방문한 페이지, 머문 시간, 브라우저·기기 종류, 대략적인 지역, 유입 경로 같은 정보를 수집하며, 사이트는 이를 개인을 알아볼 수 없는 통계로만 봅니다. 이 정보는 Google LLC(미국)가 처리하고 Google 애널리틱스의 보관 기간 설정에 따라 삭제됩니다. 이용자는 브라우저의 쿠키 설정이나 <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google 애널리틱스 차단 브라우저 부가기능</a>으로 수집을 거부할 수 있습니다.</p>
 <p>사이트는 Google AdSense 등 제3자 광고 서비스를 사용할 수 있습니다. Google을 포함한 제3자 공급업체는 쿠키를 사용하여 이용자의 이 사이트 및 다른 사이트 방문 기록을 바탕으로 광고를 게재합니다. Google은 광고 쿠키를 사용하여 이용자에게 맞춤 광고를 제공할 수 있습니다.</p>
@@ -266,8 +267,16 @@ function infoPages(count) {
 <p>개인정보 관련 문의는 <a href="contact.html">문의 페이지</a>를 이용해 주세요.</p>
 <p class="lead" style="font-size:13px">시행일: ${todayKST().slice(0, 7)}-01</p>`),
     page("contact", "문의", "지원금 레이더 문의 안내", `
-<p>정보 오류 제보, 제휴, 그 밖의 문의는 아래로 보내 주세요.</p>
-<p><a class="cta" href="${esc(issues)}" target="_blank" rel="noopener">문의 남기기 →</a></p>
+<p>정보 오류 제보, 제휴, 그 밖의 문의는 아래 양식으로 보내 주세요. 답장이 필요하면 이메일을 적어 주세요.</p>
+${issues ? `<p><a class="cta" href="${esc(issues)}" target="_blank" rel="noopener">문의 남기기 →</a></p>` : `<form id="cf" style="max-width:560px">
+<p><label>종류<br><select name="kind" style="width:100%;padding:10px;font-size:16px"><option>오류 제보</option><option>제휴</option><option selected>기타</option></select></label></p>
+<p><label>내용<br><textarea name="message" required minlength="5" maxlength="2000" rows="7" style="width:100%;padding:10px;font-size:16px"></textarea></label></p>
+<p><label>답장 받을 이메일 (선택)<br><input name="email" type="email" maxlength="254" style="width:100%;padding:10px;font-size:16px"></label></p>
+<input name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">
+<p style="font-size:13px;color:#666">보낸 내용과 적은 이메일은 답장과 사이트 개선에만 쓰고, 처리 후 1년 안에 지웁니다. 자세한 내용은 <a href="privacy.html">개인정보처리방침</a>을 봐 주세요.</p>
+<p><button class="cta" type="submit">보내기</button> <span id="cfmsg" role="status"></span></p>
+</form>
+<script>document.getElementById("cf").addEventListener("submit",async e=>{e.preventDefault();const f=e.target,m=document.getElementById("cfmsg"),d=Object.fromEntries(new FormData(f));d.page=location.pathname;m.textContent="보내는 중…";try{const r=await fetch(${JSON.stringify(CONFIG.contactApi)},{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(d)});const j=await r.json();if(j.ok){f.reset();m.textContent="잘 받았어요. 고맙습니다.";}else m.textContent=j.error||"보내지 못했어요. 잠시 후 다시 시도해 주세요.";}catch{m.textContent="보내지 못했어요. 잠시 후 다시 시도해 주세요.";}});</script>`}
 <p class="lead">지원사업 자격·신청 결과 등 개별 사업에 대한 문의는 각 사업 페이지의 소관기관 연락처나 정부24로 해 주세요.</p>`),
   ];
 }

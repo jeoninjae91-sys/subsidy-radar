@@ -10,3 +10,5 @@ CREATE TABLE IF NOT EXISTS parents_subs (
   PRIMARY KEY (email, birth_year)
 );
 CREATE TABLE IF NOT EXISTS parents_ev (day TEXT NOT NULL, k TEXT NOT NULL, n INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (day, k));
+-- 사이트 문의 (contact.html → /contact). 답장 이메일은 적은 경우에만 저장.
+CREATE TABLE IF NOT EXISTS radar_msgs (id INTEGER PRIMARY KEY AUTOINCREMENT, created_at TEXT NOT NULL, kind TEXT, message TEXT NOT NULL, email TEXT, page TEXT);

@@ -28,7 +28,8 @@ export const CONFIG = {
   gaMeasurementId: process.env.GA_MEASUREMENT_ID || "G-FMRQEBW6CL", // GA4 웹 스트림 측정 ID (빈 값 "-"이면 미삽입)
   adsenseClient: process.env.ADSENSE_CLIENT || "", // ca-pub-XXXX (비우면 광고 코드 미삽입)
   customDomain: process.env.CUSTOM_DOMAIN || "", // 예: jiwongeum.kr (구매 후 설정)
-  contactUrl: process.env.CONTACT_URL || "https://github.com/jeoninjae91-sys/subsidy-radar/issues/new",
+  contactUrl: process.env.CONTACT_URL || "", // 비우면 사이트 안 문의 양식(운영자 연락처 노출 없음)을 쓴다
+  contactApi: process.env.CONTACT_API || "https://parents-alert.oneul-mwo-ipji-weather.workers.dev/contact",
   googleVerification: process.env.GOOGLE_SITE_VERIFICATION || "", // 구글 서치콘솔 HTML 태그의 content 값
   naverVerification: process.env.NAVER_SITE_VERIFICATION || "92cb4e07dfad468fb995872ba38d5d9d3b92e016", // 네이버 서치어드바이저 HTML 태그의 content 값
 };
